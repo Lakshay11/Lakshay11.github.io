@@ -26,37 +26,17 @@ takePhotoButton.addEventListener('click', () => {
 });
 
 function uploadToCloudinary(imageDataUrl) {
-    const blob = dataURLToBlob(imageDataUrl);
-    const formData = new FormData();
-    formData.append('file', blob);
-    formData.append('upload_preset', 'ml_default');
+    const CLOUDINARY_URL = 'https://api.cloudinary.com/v1_1/dtjohf0uv/image/upload';
+    const CLOUDINARY_UPLOAD_PRESET = 'ml_default';
 
-    axios.post(`https://api.cloudinary.com/v1_1/dtjohf0uv/image/upload`, formData)
+    axios.post(CLOUDINARY_URL, {
+        file: imageDataUrl,
+        upload_preset: CLOUDINARY_UPLOAD_PRESET
+    })
     .then(response => {
         console.log('Image uploaded successfully:', response.data);
     })
     .catch(error => {
-        if (error.response) {
-            // Server responded with a status other than 200 range
-            console.error('Error uploading image:', error.response.data);
-        } else if (error.request) {
-            // Request was made but no response was received
-            console.error('Error uploading image: No response from server');
-        } else {
-            // Something else happened while setting up the request
-            console.error('Error uploading image:', error.message);
-        }
+        console.error('Error uploading image:', error);
     });
-}
-
-function dataURLToBlob(dataURL) {
-    const parts = dataURL.split(',');
-    const mime = parts[0].match(/:(.*?);/)[1];
-    const bstr = atob(parts[1]);
-    let n = bstr.length;
-    const u8arr = new Uint8Array(n);
-    while (n--) {
-        u8arr[n] = bstr.charCodeAt(n);
-    }
-    return new Blob([u8arr], { type: mime });
 }
