@@ -36,7 +36,16 @@ function uploadToCloudinary(imageDataUrl) {
         console.log('Image uploaded successfully:', response.data);
     })
     .catch(error => {
-        console.error('Error uploading image:', error);
+        if (error.response) {
+            // Server responded with a status other than 200 range
+            console.error('Error uploading image:', error.response.data);
+        } else if (error.request) {
+            // Request was made but no response was received
+            console.error('Error uploading image: No response from server');
+        } else {
+            // Something else happened while setting up the request
+            console.error('Error uploading image:', error.message);
+        }
     });
 }
 
