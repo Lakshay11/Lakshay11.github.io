@@ -34,7 +34,6 @@ function uploadToCloudinary(imageDataUrl) {
     const config = {
       headers: { "X-Requested-With": "XMLHttpRequest" },
     };
-
     axios.post(`https://api.cloudinary.com/v1_1/dtjohf0uv/image/upload`, formData)
     .then(response => {
         console.log('Image uploaded successfully:', response.data);
