@@ -31,7 +31,6 @@ function uploadToCloudinary(imageDataUrl) {
     formData.append('file', blob);
     formData.append('upload_preset', 'ml_default');
     formData.append("tags", "browser_upload"); // Optional - add tag for image admin in Cloudinary
-    formData.append("file", file);
     const config = {
       headers: { "X-Requested-With": "XMLHttpRequest" },
     };
