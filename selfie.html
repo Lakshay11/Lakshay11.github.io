@@ -36,11 +36,14 @@
 <body>
     <h1>#shegotherlaksh</h1>
     <p>Let's make Lakshay Meenakshi remember the day, how? Just say cheese, click, and upload!</p>
+    <button id="start-camera">Open Camera</button>
+    <video id="camera-stream" autoplay playsinline style="display: none;"></video>
+    <canvas id="capture-canvas" style="display: none;"></canvas>
+    <button id="take-photo" style="display: none;">Take Photo</button>
     <input type="file" accept="image/*" capture="user" id="file-input" style="display: none;">
-    <button id="take-photo">Take Photo</button>
     <p id="message"></p>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/axios/0.21.1/axios.min.js"></script>
     <script src="https://widget.cloudinary.com/v2.0/global/all.js"></script>
-    <script src="/script-1.js"></script>
+    <script src="script.js"></script>
 </body>
 </html>
