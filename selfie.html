@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Selfie Capture and Upload</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            text-align: center;
+            padding: 20px;
+        }
+        #start-camera, #take-photo {
+            margin: 20px;
+            padding: 10px 20px;
+            font-size: 16px;
+            cursor: pointer;
+            background-color: #007BFF;
+            color: white;
+            border: none;
+            border-radius: 5px;
+        }
+        #camera-stream {
+            display: block;
+            margin: 0 auto;
+            width: 100%;
+            max-width: 300px;
+        }
+        #capture-canvas {
+            display: none;
+        }
+        #message {
+            margin-top: 20px;
+            font-size: 18px;
+            color: green;
+        }
+    </style>
+</head>
+<body>
+    <h1>#shegotherlaksh</h1>
+    <p>Let's make Lakshay Meenakshi remember the day, how? Just say cheese, click, and upload!</p>
+    <button id="start-camera">Open Camera</button>
+    <video id="camera-stream" autoplay></video>
+    <canvas id="capture-canvas"></canvas>
+    <button id="take-photo">Take Photo</button>
+    <p id="message"></p>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/axios/0.21.1/axios.min.js"></script>
+    <script src="https://widget.cloudinary.com/v2.0/global/all.js"></script>
+    <script src="/script-1.js"></script>
+</body>
+</html>
