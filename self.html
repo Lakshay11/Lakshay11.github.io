@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Selfie Capture and Upload</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            text-align: center;
+            padding: 20px;
+        }
+        #start-camera, #take-photo, #upload-another {
+            margin: 20px;
+            padding: 10px 20px;
+            font-size: 16px;
+            cursor: pointer;
+            background-color: #007BFF;
+            color: white;
+            border: none;
+            border-radius: 5px;
+        }
+        #camera-stream, #capture-canvas, #uploaded-image {
+            display: none;
+            margin-top: 20px;
+        }
+        #message {
+            margin-top: 20px;
+            font-size: 18px;
+            color: green;
+        }
+    </style>
+</head>
+<body>
+    <h1>#shigotherlaksh</h1>
+    <p>Let's make Lakshay Meenakshi remember the day, how? Just say cheese, click, and upload!</p>
+    <button id="start-camera">Open Camera</button>
+    <video id="camera-stream" autoplay playsinline></video>
+    <canvas id="capture-canvas"></canvas>
+    <button id="take-photo">Take Photo</button>
+    <input type="file" accept="image/*" capture="user" id="file-input">
+    <div id="message"></div>
+    <img id="uploaded-image" src="" alt="Uploaded Image">
+    <button id="upload-another">Upload Another Image</button>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/axios/0.21.1/axios.min.js"></script>
+    <script src="https://widget.cloudinary.com/v2.0/global/all.js"></script>
+    <script src="script-2.js"></script>
+</body>
+</html>
