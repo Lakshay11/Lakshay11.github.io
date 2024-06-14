@@ -7,7 +7,12 @@ const canvas = document.getElementById('capture-canvas');
 const uploadedImage = document.getElementById('uploaded-image');
 const uploadAnotherButton = document.getElementById('upload-another');
 
+// Initially hide take-photo and upload-another buttons
+takePhotoButton.style.display = 'none';
+uploadAnotherButton.style.display = 'none';
+
 startCameraButton.addEventListener('click', () => {
+    // Show file input dialog
     fileInput.click();
 });
 
@@ -33,13 +38,15 @@ takePhotoButton.addEventListener('click', () => {
 });
 
 uploadAnotherButton.addEventListener('click', () => {
+    // Reset everything for a new upload
     message.textContent = '';
     uploadedImage.src = '';
     uploadedImage.style.display = 'none';
     fileInput.value = '';
     startCameraButton.style.display = 'inline';
-    takePhotoButton.style.display = 'inline';
-    video.style.display = 'inline';
+    takePhotoButton.style.display = 'none';
+    uploadAnotherButton.style.display = 'none';
+    video.style.display = 'none';
 });
 
 function uploadToCloudinary(file) {
@@ -55,7 +62,7 @@ function uploadToCloudinary(file) {
             uploadedImage.style.display = 'block';
             startCameraButton.style.display = 'none';
             takePhotoButton.style.display = 'none';
-            video.style.display = 'none';
+            uploadAnotherButton.style.display = 'inline';
         })
         .catch(error => {
             console.error('Error uploading image:', error);
@@ -74,3 +81,21 @@ function dataURLToBlob(dataURL) {
     }
     return new Blob([u8arr], { type: mime });
 }
+
+// Optional: Automatically start camera stream when 'Open Camera' button is clicked
+startCameraButton.addEventListener('click', async () => {
+    startCameraButton.style.display = 'none';
+    takePhotoButton.style.display = 'inline';
+    video.style.display = 'inline';
+
+    try {
+        const stream = await navigator.mediaDevices.getUserMedia({ video: true });
+        video.srcObject = stream;
+    } catch (err) {
+        console.error('Error accessing camera:', err);
+        message.textContent = 'Error accessing camera. Please try again.';
+        startCameraButton.style.display = 'inline';
+        takePhotoButton.style.display = 'none';
+        video.style.display = 'none';
+    }
+});
