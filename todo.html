@@ -1,0 +1,476 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Duo Todo — Tailwind</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    :root { --ring: 0 0% 0%; }
+    html { font-family: Inter, system-ui, -apple-system, Segoe UI, Roboto, "Helvetica Neue", Arial, "Noto Sans", "Apple Color Emoji", "Segoe UI Emoji"; }
+    dialog::backdrop { background: rgb(0 0 0 / 0.4); }
+    @media (max-width: 640px) { .two-col { grid-template-columns: 1fr !important; } }
+  </style>
+</head>
+<body class="bg-slate-50 text-slate-900 min-h-screen">
+  <div class="max-w-6xl mx-auto p-4 sm:p-6">
+    <header class="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
+      <div>
+        <h1 id="app-title" class="text-2xl sm:text-3xl font-bold tracking-tight">Duo Todo</h1>
+        <p class="text-sm text-slate-600">Two-person task board with local storage.</p>
+      </div>
+
+      <div class="flex flex-wrap gap-2 items-center">
+        <div class="relative">
+          <input id="search" type="search" placeholder="Search tasks…" class="peer w-64 max-w-[70vw] rounded-xl border border-slate-300 bg-white px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500" />
+          <span class="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-slate-400">🔍</span>
+        </div>
+        <select id="filter" class="rounded-xl border border-slate-300 bg-white px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500">
+          <option value="all">All</option>
+          <option value="active">Active</option>
+          <option value="done">Completed</option>
+          <option value="overdue">Overdue</option>
+        </select>
+        <select id="sort" class="rounded-xl border border-slate-300 bg-white px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500">
+          <option value="dueAsc">Due ↑</option>
+          <option value="dueDesc">Due ↓</option>
+          <option value="createdDesc">Newest</option>
+          <option value="createdAsc">Oldest</option>
+        </select>
+        <button id="exportBtn" class="rounded-xl border border-slate-300 bg-white px-3 py-2 text-sm hover:bg-slate-100">Export</button>
+        <label class="cursor-pointer rounded-xl border border-slate-300 bg-white px-3 py-2 text-sm hover:bg-slate-100">
+          Import<input id="importInput" type="file" accept="application/json" class="hidden" />
+        </label>
+        <button id="clearCompletedBtn" class="rounded-xl bg-emerald-50 text-emerald-700 border border-emerald-200 px-3 py-2 text-sm hover:bg-emerald-100">Clear completed</button>
+        <button id="resetBtn" class="rounded-xl bg-rose-50 text-rose-700 border border-rose-200 px-3 py-2 text-sm hover:bg-rose-100">Reset</button>
+      </div>
+    </header>
+
+    <!-- New Task Form -->
+    <section class="mt-6">
+      <form id="newTaskForm" class="grid grid-cols-1 sm:grid-cols-6 gap-3 bg-white p-4 rounded-2xl shadow-sm border border-slate-200">
+        <div class="sm:col-span-2">
+          <label for="title" class="block text-xs font-medium text-slate-600">Task</label>
+          <input id="title" required placeholder="e.g., Prepare presentation" class="w-full rounded-xl border border-slate-300 bg-white px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500" />
+        </div>
+        <div class="sm:col-span-2">
+          <label for="subtitle" class="block text-xs font-medium text-slate-600">Sub Task</label>
+          <input id="subtitle" placeholder="Optional details" class="w-full rounded-xl border border-slate-300 bg-white px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500" />
+        </div>
+        <div class="sm:col-span-1">
+          <label for="due" class="block text-xs font-medium text-slate-600">To Do By — Time</label>
+          <input id="due" type="datetime-local" required class="w-full rounded-xl border border-slate-300 bg-white px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500" />
+        </div>
+        <div class="sm:col-span-1">
+          <label for="assignee" class="block text-xs font-medium text-slate-600">Assign To</label>
+          <select id="assignee" class="w-full rounded-xl border border-slate-300 bg-white px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"></select>
+        </div>
+        <div class="sm:col-span-6 flex justify-end gap-2">
+          <button type="submit" class="inline-flex items-center gap-2 rounded-xl bg-indigo-600 px-4 py-2 text-sm font-medium text-white hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-500">
+            <span>Submit</span>
+          </button>
+        </div>
+      </form>
+    </section>
+
+    <!-- Stats -->
+    <section class="mt-4 grid grid-cols-3 gap-3">
+      <div class="bg-white rounded-2xl p-4 border border-slate-200">
+        <div class="text-xs text-slate-500">Total</div>
+        <div id="stat-total" class="text-xl font-semibold">0</div>
+      </div>
+      <div class="bg-white rounded-2xl p-4 border border-slate-200">
+        <div class="text-xs text-slate-500">Active</div>
+        <div id="stat-active" class="text-xl font-semibold">0</div>
+      </div>
+      <div class="bg-white rounded-2xl p-4 border border-slate-200">
+        <div class="text-xs text-slate-500">Overdue</div>
+        <div id="stat-overdue" class="text-xl font-semibold">0</div>
+      </div>
+    </section>
+
+    <!-- Boards -->
+    <section class="mt-6 grid gap-6 two-col" style="display:grid; grid-template-columns: 1fr 1fr;">
+      <div>
+        <div class="flex items-center justify-between mb-2">
+          <h2 id="p1-label" class="text-lg font-semibold"></h2>
+          <span id="p1-count" class="text-xs text-slate-500"></span>
+        </div>
+        <div id="p1" class="min-h-[120px] bg-white rounded-2xl border border-slate-200 p-3 space-y-3"></div>
+      </div>
+      <div>
+        <div class="flex items-center justify-between mb-2">
+          <h2 id="p2-label" class="text-lg font-semibold"></h2>
+          <span id="p2-count" class="text-xs text-slate-500"></span>
+        </div>
+        <div id="p2" class="min-h-[120px] bg-white rounded-2xl border border-slate-200 p-3 space-y-3"></div>
+      </div>
+    </section>
+
+    <footer class="mt-10 text-center text-xs text-slate-500">
+      <p>Built with Tailwind. Data lives in your browser (localStorage).</p>
+    </footer>
+  </div>
+
+  <!-- Edit Dialog -->
+  <dialog id="editDialog" class="rounded-2xl p-0 w-[92vw] max-w-xl">
+    <form id="editForm" method="dialog" class="p-4 space-y-3">
+      <div class="flex items-start justify-between">
+        <h3 class="text-lg font-semibold">Edit Task</h3>
+        <button type="button" id="closeEdit" class="text-slate-400 hover:text-slate-600">✕</button>
+      </div>
+      <input type="hidden" id="edit-id" />
+      <div>
+        <label for="edit-title" class="block text-xs font-medium text-slate-600">Task</label>
+        <input id="edit-title" required class="w-full rounded-xl border border-slate-300 bg-white px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500" />
+      </div>
+      <div>
+        <label for="edit-subtitle" class="block text-xs font-medium text-slate-600">Sub Task</label>
+        <input id="edit-subtitle" class="w-full rounded-xl border border-slate-300 bg-white px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500" />
+      </div>
+      <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+        <div>
+          <label for="edit-due" class="block text-xs font-medium text-slate-600">To Do By — Time</label>
+          <input id="edit-due" type="datetime-local" required class="w-full rounded-xl border border-slate-300 bg-white px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500" />
+        </div>
+        <div>
+          <label for="edit-assignee" class="block text-xs font-medium text-slate-600">Assign To</label>
+          <select id="edit-assignee" class="w-full rounded-xl border border-slate-300 bg-white px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"></select>
+        </div>
+      </div>
+      <div class="flex items-center justify-between pt-2">
+        <button id="deleteBtn" type="button" class="rounded-xl bg-rose-50 text-rose-700 border border-rose-200 px-3 py-2 text-sm hover:bg-rose-100">Delete</button>
+        <div class="space-x-2">
+          <button type="button" id="markDoneBtn" class="rounded-xl bg-emerald-600 text-white px-3 py-2 text-sm hover:bg-emerald-700">Toggle Done</button>
+          <button type="submit" class="rounded-xl bg-indigo-600 text-white px-3 py-2 text-sm hover:bg-indigo-700">Save</button>
+        </div>
+      </div>
+    </form>
+  </dialog>
+
+  <template id="taskTemplate">
+    <article class="task-card group rounded-xl border border-slate-200 bg-white p-3 shadow-sm">
+      <div class="flex items-start gap-3">
+        <input type="checkbox" class="mt-1 h-4 w-4 shrink-0 rounded border-slate-300" />
+        <div class="min-w-0 flex-1">
+          <div class="flex items-start justify-between gap-3">
+            <h3 class="title font-medium"></h3>
+            <div class="flex items-center gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
+              <button class="edit-btn rounded-lg px-2 py-1 text-xs bg-slate-100 hover:bg-slate-200">Edit</button>
+              <button class="delete-btn rounded-lg px-2 py-1 text-xs bg-rose-50 text-rose-700 hover:bg-rose-100">Del</button>
+            </div>
+          </div>
+          <p class="subtitle text-sm text-slate-600"></p>
+          <div class="mt-2 flex flex-wrap items-center gap-2 text-xs">
+            <span class="due inline-flex items-center rounded-full border px-2 py-0.5"></span>
+            <span class="age text-slate-500"></span>
+          </div>
+        </div>
+      </div>
+    </article>
+  </template>
+
+  <script>
+    // === Configurable Names ===
+    const PERSON1_NAME = 'Person 1'; // ⬅️ change as needed
+    const PERSON2_NAME = 'Person 2'; // ⬅️ change as needed
+
+    // Storage key (change if you want a separate board)
+    const STORAGE_KEY = 'duo-todo-v1';
+
+    const state = {
+      tasks: [],
+      filter: 'all',
+      sort: 'dueAsc',
+      query: ''
+    };
+
+    // Utilities
+    const $ = (sel, root = document) => root.querySelector(sel);
+    const $$ = (sel, root = document) => Array.from(root.querySelectorAll(sel));
+    const uid = () => Math.random().toString(36).slice(2) + Date.now().toString(36);
+
+    function save() { localStorage.setItem(STORAGE_KEY, JSON.stringify(state.tasks)); }
+    function load() {
+      try {
+        const raw = localStorage.getItem(STORAGE_KEY);
+        state.tasks = Array.isArray(JSON.parse(raw)) ? JSON.parse(raw) : [];
+      } catch { state.tasks = []; }
+    }
+
+    function fmtDate(dtStr) {
+      if (!dtStr) return '';
+      const d = new Date(dtStr);
+      return d.toLocaleString([], { dateStyle: 'medium', timeStyle: 'short' });
+    }
+
+    function timeSince(ts) {
+      const d = new Date(ts), now = new Date();
+      const sec = Math.floor((now - d) / 1000);
+      const units = [[60, 's'], [60, 'm'], [24, 'h'], [7, 'd']];
+      let n = sec, u = 's';
+      for (const [k, label] of units) { if (n >= k) { n = Math.floor(n / k); u = label; } else break; u = label; }
+      return n + u + ' ago';
+    }
+
+    function isOverdue(task) { return !task.completed && new Date(task.due) < new Date(); }
+
+    function applyFilterSort(tasks) {
+      const q = state.query.trim().toLowerCase();
+      let t = tasks.filter(t => {
+        const matchesQ = !q || [t.title, t.subtitle].some(v => (v||'').toLowerCase().includes(q));
+        const overdue = isOverdue(t);
+        const statusOk = state.filter === 'all' ||
+          (state.filter === 'active' && !t.completed) ||
+          (state.filter === 'done' && t.completed) ||
+          (state.filter === 'overdue' && overdue);
+        return matchesQ && statusOk;
+      });
+      const cmp = {
+        dueAsc: (a,b) => new Date(a.due) - new Date(b.due),
+        dueDesc: (a,b) => new Date(b.due) - new Date(a.due),
+        createdDesc: (a,b) => new Date(b.createdAt) - new Date(a.createdAt),
+        createdAsc: (a,b) => new Date(a.createdAt) - new Date(b.createdAt),
+      }[state.sort];
+      return t.sort(cmp);
+    }
+
+    // Render
+    function render() {
+      $('#p1-label').textContent = PERSON1_NAME;
+      $('#p2-label').textContent = PERSON2_NAME;
+      $('#app-title').textContent = `${PERSON1_NAME} ↔ ${PERSON2_NAME} — Duo Todo`;
+
+      const p1 = $('#p1');
+      const p2 = $('#p2');
+      p1.innerHTML = ''; p2.innerHTML = '';
+
+      const all = applyFilterSort(state.tasks);
+      const t1 = all.filter(t => t.person === 'p1');
+      const t2 = all.filter(t => t.person === 'p2');
+
+      $('#p1-count').textContent = `${t1.length} tasks`;
+      $('#p2-count').textContent = `${t2.length} tasks`;
+
+      for (const t of t1) p1.appendChild(renderCard(t));
+      for (const t of t2) p2.appendChild(renderCard(t));
+
+      // Stats
+      $('#stat-total').textContent = state.tasks.length;
+      $('#stat-active').textContent = state.tasks.filter(t => !t.completed).length;
+      $('#stat-overdue').textContent = state.tasks.filter(isOverdue).length;
+
+      // Assignee selects
+      const assignee = $('#assignee');
+      assignee.innerHTML = '';
+      for (const [val, label] of [['p1', PERSON1_NAME], ['p2', PERSON2_NAME]]) {
+        const opt = document.createElement('option'); opt.value = val; opt.textContent = label; assignee.appendChild(opt);
+      }
+      const editAssignee = $('#edit-assignee');
+      editAssignee.innerHTML = assignee.innerHTML;
+    }
+
+    function renderCard(task) {
+      const tpl = $('#taskTemplate');
+      const node = tpl.content.firstElementChild.cloneNode(true);
+      const title = $('.title', node);
+      const subtitle = $('.subtitle', node);
+      const due = $('.due', node);
+      const age = $('.age', node);
+      const checkbox = $('input[type="checkbox"]', node);
+      const editBtn = $('.edit-btn', node);
+      const delBtn = $('.delete-btn', node);
+
+      title.textContent = task.title;
+      subtitle.textContent = task.subtitle || '';
+      age.textContent = `Created ${timeSince(task.createdAt)}`;
+
+      const overdue = isOverdue(task);
+      due.textContent = `Due ${fmtDate(task.due)}`;
+      due.className = `due inline-flex items-center rounded-full border px-2 py-0.5 ${overdue ? 'border-rose-200 text-rose-700 bg-rose-50' : 'border-slate-200 text-slate-600 bg-slate-50'}`;
+
+      if (task.completed) {
+        node.classList.add('opacity-70');
+        title.classList.add('line-through');
+      }
+
+      checkbox.checked = !!task.completed;
+      checkbox.addEventListener('change', () => {
+        task.completed = checkbox.checked;
+        save();
+        render();
+      });
+
+      editBtn.addEventListener('click', () => openEdit(task.id));
+      delBtn.addEventListener('click', () => { if (confirm('Delete this task?')) { removeTask(task.id); } });
+
+      // Drag handle (optional: allow reassign by dragging between columns later)
+      node.setAttribute('data-id', task.id);
+      node.draggable = true;
+      node.addEventListener('dragstart', (e) => {
+        e.dataTransfer.setData('text/plain', task.id);
+        e.dataTransfer.effectAllowed = 'move';
+      });
+
+      return node;
+    }
+
+    // DnD to move between people
+    function enableDnD() {
+      for (const col of ['p1','p2']) {
+        const el = document.getElementById(col);
+        el.addEventListener('dragover', (e) => { e.preventDefault(); el.classList.add('ring-2','ring-indigo-400'); });
+        el.addEventListener('dragleave', () => el.classList.remove('ring-2','ring-indigo-400'));
+        el.addEventListener('drop', (e) => {
+          e.preventDefault(); el.classList.remove('ring-2','ring-indigo-400');
+          const id = e.dataTransfer.getData('text/plain');
+          const t = state.tasks.find(x => x.id === id);
+          if (t) { t.person = col; save(); render(); }
+        });
+      }
+    }
+
+    function addTask({ title, subtitle, due, person }) {
+      state.tasks.push({ id: uid(), title: title.trim(), subtitle: (subtitle||'').trim(), due, person, completed: false, createdAt: new Date().toISOString() });
+      save();
+      render();
+    }
+
+    function updateTask(id, patch) {
+      const t = state.tasks.find(t => t.id === id); if (!t) return;
+      Object.assign(t, patch);
+      save();
+      render();
+    }
+
+    function removeTask(id) {
+      state.tasks = state.tasks.filter(t => t.id !== id);
+      save();
+      render();
+    }
+
+    // Edit dialog helpers
+    function openEdit(id) {
+      const t = state.tasks.find(t => t.id === id); if (!t) return;
+      $('#edit-id').value = t.id;
+      $('#edit-title').value = t.title;
+      $('#edit-subtitle').value = t.subtitle || '';
+      $('#edit-due').value = toLocalInputValue(t.due);
+      $('#edit-assignee').value = t.person;
+      $('#editDialog').showModal();
+    }
+
+    function toLocalInputValue(isoStr) {
+      // Convert ISO to local for datetime-local input
+      const d = new Date(isoStr);
+      const pad = n => String(n).padStart(2,'0');
+      return `${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`;
+    }
+
+    function fromLocalInputValue(val) {
+      // Value from datetime-local is local time; convert to ISO
+      return new Date(val).toISOString();
+    }
+
+    // Event wiring
+    function wireEvents() {
+      // New task form
+      $('#newTaskForm').addEventListener('submit', (e) => {
+        e.preventDefault();
+        const title = $('#title').value;
+        const subtitle = $('#subtitle').value;
+        const dueVal = $('#due').value;
+        const assignee = $('#assignee').value;
+        if (!title.trim() || !dueVal) return;
+        addTask({ title, subtitle, due: fromLocalInputValue(dueVal), person: assignee });
+        e.target.reset();
+        $('#title').focus();
+      });
+
+      // Filters
+      $('#filter').addEventListener('change', (e) => { state.filter = e.target.value; render(); });
+      $('#sort').addEventListener('change', (e) => { state.sort = e.target.value; render(); });
+      $('#search').addEventListener('input', (e) => { state.query = e.target.value; render(); });
+
+      // Edit dialog
+      $('#closeEdit').addEventListener('click', () => $('#editDialog').close());
+      $('#editForm').addEventListener('submit', (e) => {
+        e.preventDefault();
+        const id = $('#edit-id').value;
+        updateTask(id, {
+          title: $('#edit-title').value.trim(),
+          subtitle: $('#edit-subtitle').value.trim(),
+          due: fromLocalInputValue($('#edit-due').value),
+          person: $('#edit-assignee').value,
+        });
+        $('#editDialog').close();
+      });
+
+      $('#deleteBtn').addEventListener('click', () => {
+        const id = $('#edit-id').value; removeTask(id); $('#editDialog').close();
+      });
+
+      $('#markDoneBtn').addEventListener('click', () => {
+        const id = $('#edit-id').value; const t = state.tasks.find(t => t.id === id); if (!t) return;
+        updateTask(id, { completed: !t.completed });
+      });
+
+      // Clear completed
+      $('#clearCompletedBtn').addEventListener('click', () => {
+        if (!state.tasks.some(t => t.completed)) return alert('No completed tasks.');
+        if (confirm('Clear all completed tasks?')) { state.tasks = state.tasks.filter(t => !t.completed); save(); render(); }
+      });
+
+      // Reset board
+      $('#resetBtn').addEventListener('click', () => {
+        if (confirm('This removes all tasks. Continue?')) { state.tasks = []; save(); render(); }
+      });
+
+      // Export / Import
+      $('#exportBtn').addEventListener('click', () => {
+        const blob = new Blob([JSON.stringify(state.tasks, null, 2)], { type: 'application/json' });
+        const a = document.createElement('a');
+        a.href = URL.createObjectURL(blob); a.download = 'duo-todo-export.json'; a.click();
+        setTimeout(() => URL.revokeObjectURL(a.href), 1000);
+      });
+      $('#importInput').addEventListener('change', async (e) => {
+        const file = e.target.files?.[0]; if (!file) return;
+        try {
+          const text = await file.text();
+          const data = JSON.parse(text);
+          if (!Array.isArray(data)) throw new Error('Invalid file');
+          // naive merge: keep existing + new (dedupe by id)
+          const map = new Map(state.tasks.map(t => [t.id, t]));
+          for (const t of data) { if (t && t.id && !map.has(t.id)) map.set(t.id, t); else if (t && t.id) map.set(t.id, { ...map.get(t.id), ...t }); }
+          state.tasks = Array.from(map.values()); save(); render();
+        } catch (err) { alert('Import failed. Make sure this is a valid export JSON.'); }
+        e.target.value = '';
+      });
+    }
+
+    // Init
+    function init() {
+      // Seed labels and selects
+      $('#p1-label').textContent = PERSON1_NAME;
+      $('#p2-label').textContent = PERSON2_NAME;
+      for (const id of ['assignee','edit-assignee']) {
+        const el = document.getElementById(id);
+        el.innerHTML = `<option value="p1">${PERSON1_NAME}</option><option value="p2">${PERSON2_NAME}</option>`;
+      }
+
+      load();
+      wireEvents();
+      enableDnD();
+      render();
+
+      // Accessibility: keyboard close for dialog ESC
+      $('#editDialog').addEventListener('cancel', (e) => { e.preventDefault(); $('#editDialog').close(); });
+    }
+
+    document.addEventListener('DOMContentLoaded', init);
+  </script>
+</body>
+</html>
