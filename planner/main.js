@@ -100,37 +100,27 @@ if (!this.passphrase) {
     }
 
     // Make API request
-async makeRequest(action, data = {}, method = 'GET') {
-    let url = new URL(this.API_URL);
-
-    if (method === 'GET') {
-        url.searchParams.set('action', action);
-        url.searchParams.set('passphrase', this.passphrase);
+async makeRequest(action, params = {}) {
+    if (!this.passphrase) {
+        throw new Error('Missing passphrase');
     }
 
-    const options = {
-        method,
-        headers: { 'Accept': 'application/json' }
-    };
+    const url = new URL(this.API_URL);
+    url.searchParams.set('action', action);
+    url.searchParams.set('passphrase', this.passphrase);
 
-    if (method === 'POST') {
-        options.headers['Content-Type'] = 'application/json';
-        options.body = JSON.stringify({
-            action,
-            passphrase: this.passphrase,
-            ...data
-        });
-    }
+    Object.entries(params).forEach(([k, v]) => {
+        url.searchParams.set(k, v);
+    });
 
-    console.log('API REQUEST:', method, url.toString(), options.body);
+    console.log('JSONP REQUEST →', url.toString());
 
-    const res = await fetch(url.toString(), options);
-    const json = await res.json();
+    const response = await jsonpRequest(url.toString());
 
-    console.log('API RESPONSE:', json);
-    return json;
+    console.log('JSONP RESPONSE ←', response);
+
+    return response;
 }
-
 
     // Load all goals
     async loadGoals() {
@@ -498,8 +488,30 @@ function resetForm() {
 function filterGoals() {
     goalTracker.filterGoals();
 }
+function jsonpRequest(url) {
+    return new Promise((resolve, reject) => {
+        const callbackName = 'jsonp_cb_' + Math.random().toString(36).slice(2);
+
+        window[callbackName] = (data) => {
+            delete window[callbackName];
+            script.remove();
+            resolve(data);
+        };
+
+        const script = document.createElement('script');
+        script.src = `${url}&callback=${callbackName}`;
+        script.onerror = () => {
+            delete window[callbackName];
+            script.remove();
+            reject(new Error('JSONP request failed'));
+        };
+
+        document.body.appendChild(script);
+    });
+}
 
 // Initialize app when DOM is loaded
 document.addEventListener('DOMContentLoaded', () => {
     goalTracker = new GoalTracker();
 });
+
