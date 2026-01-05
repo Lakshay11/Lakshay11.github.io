@@ -2,7 +2,7 @@
 class GoalTracker {
     constructor() {
         // this.API_URL = 'https://script.google.com/macros/s/AKfycbzOyNMS_gNV5mnBmYTgCpHzIMdwn473TasQjOThMryWGy9oCSo6BBATHgvRNcZzNURg/exec'; // Google Apps Script URL
-        this.API_URL = "https://script.google.com/macros/s/AKfycbzOyNMS_gNV5mnBmYTgCpHzIMdwn473TasQjOThMryWGy9oCSo6BBATHgvRNcZzNURg/exec"
+        this.API_URL = "https://script.google.com/macros/s/AKfycbzshjmbHsrpRIeInHaMLC3vsqXQPnQ-PNk4E7nXSq5u3mFyl1Uz75ZKRLL62wVwJcj8/exec"
         this.passphrase = localStorage.getItem('goalTrackerPassphrase') || '';
         this.goals = [];
         this.editingGoalId = null;
