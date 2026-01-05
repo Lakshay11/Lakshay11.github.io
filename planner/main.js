@@ -101,9 +101,7 @@ if (!this.passphrase) {
 
     // Make API request
 async makeRequest(action, params = {}) {
-    if (!this.passphrase) {
-        throw new Error('Missing passphrase');
-    }
+    if (!this.passphrase) throw new Error('Missing passphrase');
 
     const url = new URL(this.API_URL);
     url.searchParams.set('action', action);
@@ -114,20 +112,20 @@ async makeRequest(action, params = {}) {
     });
 
     console.log('JSONP REQUEST →', url.toString());
-
-    const response = await jsonpRequest(url.toString());
-
-    console.log('JSONP RESPONSE ←', response);
-
-    return response;
+    return jsonpRequest(url.toString());
 }
+
 
     // Load all goals
     async loadGoals() {
         try {
-            const response = await this.makeRequest('auth', {}, 'GET');
+            // const response = await this.makeRequest('auth', {}, 'GET');
+            const response = await this.makeRequest('getAll');
+// this.goals = response.data || [];
+// this.updateAllSections();
+
             if (response.success) {
-                this.goals = response.data;
+                this.goals = response.data || [];
                 this.updateAllSections();
             }
         } catch (error) {
