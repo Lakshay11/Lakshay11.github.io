@@ -24,172 +24,203 @@
         }
     </style>
 </head>
-<body class="bg-gray-50 min-h-screen">
+<body class="bg-slate-50 min-h-screen">
     <!-- Authentication Modal -->
     <div id="authModal" class="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center">
-        <div class="bg-white rounded-lg p-6 max-w-sm w-full mx-4">
-            <h2 class="text-xl font-bold mb-4">Enter Passphrase</h2>
-            <input type="password" id="passphraseInput" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500" placeholder="Enter passphrase">
-            <button onclick="authenticate()" class="w-full mt-4 bg-blue-500 text-white py-2 rounded-md hover:bg-blue-600 transition">Unlock</button>
-            <div id="authError" class="text-red-500 text-sm mt-2 hidden">Invalid passphrase</div>
+        <div class="bg-white rounded-xl p-6 max-w-sm w-full mx-4 shadow-xl">
+            <h2 class="text-xl font-bold mb-6 text-slate-900">Enter Passphrase</h2>
+            <input type="password" id="passphraseInput" class="w-full px-4 py-3 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all" placeholder="Enter passphrase" autocomplete="current-password">
+            <button onclick="authenticate()" class="w-full mt-4 bg-blue-600 text-white py-3 rounded-lg hover:bg-blue-700 transition-colors font-medium shadow-sm hover:shadow-md">Unlock</button>
+            <div id="authError" class="text-red-600 text-sm mt-3 hidden font-medium">Invalid passphrase</div>
         </div>
     </div>
 
     <!-- Main App Container -->
     <div id="app" class="hidden">
         <!-- Header -->
-        <header class="bg-white shadow-sm border-b border-gray-200 sticky top-0 z-40">
-            <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
+        <header class="bg-white shadow-sm border-b border-slate-200 sticky top-0 z-40">
+            <div class="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
                 <div class="flex items-center justify-between">
-                    <h1 class="text-2xl font-bold text-gray-900">Goal Tracker</h1>
-                    <button onclick="logout()" class="text-sm text-gray-500 hover:text-gray-700">Logout</button>
+                    <h1 class="text-2xl font-bold text-slate-900">Goal Tracker</h1>
+                    <button onclick="logout()" class="text-sm text-slate-500 hover:text-slate-700 transition-colors">Logout</button>
                 </div>
             </div>
         </header>
 
-        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 space-y-6">
+        <div class="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-6">
             
-            <!-- Section 1: Add / Manage Goal -->
-            <section class="bg-white rounded-lg shadow-md p-6">
-                <h2 class="text-lg font-semibold mb-4 text-gray-900">Add / Manage Goal</h2>
+            <!-- Desktop Grid for Attention Sections -->
+            <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
                 
-                <form id="goalForm" class="space-y-4">
-                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                        <div>
-                            <label class="block text-sm font-medium text-gray-700 mb-1">Goal Name *</label>
-                            <input type="text" id="goalName" required class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
-                        </div>
-                        <div>
-                            <label class="block text-sm font-medium text-gray-700 mb-1">Target Completion Date *</label>
-                            <input type="date" id="targetDate" required class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
+                <!-- Section 1: Goals Needing Immediate Attention -->
+                <section class="lg:col-span-6 bg-white rounded-xl shadow-sm border border-slate-200 p-6 border-l-4 border-l-red-500">
+                    <div class="flex items-center gap-2 mb-4">
+                        <div class="w-2 h-2 bg-red-500 rounded-full"></div>
+                        <h2 class="text-lg font-semibold text-red-600">Goals Needing Immediate Attention</h2>
+                    </div>
+                    <div id="immediateAttention" class="space-y-3">
+                        <p class="text-slate-400 text-sm italic">No goals need immediate attention</p>
+                    </div>
+                </section>
+
+                <!-- Section 2: Goals Needing Attention -->
+                <section class="lg:col-span-6 bg-white rounded-xl shadow-sm border border-slate-200 p-6 border-l-4 border-l-amber-500">
+                    <div class="flex items-center gap-2 mb-4">
+                        <div class="w-2 h-2 bg-amber-500 rounded-full"></div>
+                        <h2 class="text-lg font-semibold text-amber-600">Goals Needing Attention</h2>
+                    </div>
+                    <div id="needsAttention" class="space-y-3">
+                        <p class="text-slate-400 text-sm italic">No goals need attention</p>
+                    </div>
+                </section>
+            </div>
+
+            <!-- Section 3: Overall Completion Score -->
+            <section class="bg-white rounded-xl shadow-sm border border-slate-200 p-6">
+                <div class="text-center">
+                    <h2 class="text-lg font-semibold mb-2 text-slate-900">Overall Completion Score</h2>
+                    <p class="text-sm text-slate-500 mb-6">Across all active goals</p>
+                    <div class="flex items-center justify-center">
+                        <div class="relative">
+                            <svg class="w-28 h-28">
+                                <circle cx="56" cy="56" r="48" stroke="#e2e8f0" stroke-width="8" fill="none"></circle>
+                                <circle id="progressRing" cx="56" cy="56" r="48" stroke="#3b82f6" stroke-width="8" fill="none" 
+                                        stroke-dasharray="301.59" stroke-dashoffset="301.59" class="progress-ring transition-all duration-500"></circle>
+                            </svg>
+                            <div class="absolute inset-0 flex items-center justify-center">
+                                <span id="completionScore" class="text-2xl font-bold text-slate-900">0%</span>
+                            </div>
                         </div>
                     </div>
-                    
+                </div>
+            </section>
+
+            <!-- Section 4: Search & Filter Goals -->
+            <section class="bg-white rounded-xl shadow-sm border border-slate-200 p-6">
+                <h2 class="text-xl font-semibold mb-6 text-slate-900">Search & Filter Goals</h2>
+                
+                <div class="bg-slate-50 rounded-lg p-4 mb-6">
+                    <div class="space-y-4">
+                        <div>
+                            <input type="text" id="searchInput" placeholder="Search goals..." 
+                                   class="w-full px-4 py-2.5 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all bg-white"
+                                   oninput="filterGoals()">
+                        </div>
+                        
+                        <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                            <div>
+                                <label class="block text-sm font-medium text-slate-700 mb-2">Status</label>
+                                <select id="statusFilter" onchange="filterGoals()" class="w-full px-3 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all bg-white">
+                                    <option value="">All Status</option>
+                                    <option value="todo">To Do</option>
+                                    <option value="hold">On Hold</option>
+                                    <option value="done">Done</option>
+                                    <option value="deferred">Deferred for Later</option>
+                                    <option value="archived">Archived</option>
+                                </select>
+                            </div>
+                            
+                            <div>
+                                <label class="block text-sm font-medium text-slate-700 mb-2">Priority</label>
+                                <select id="priorityFilter" onchange="filterGoals()" class="w-full px-3 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all bg-white">
+                                    <option value="">All Priority</option>
+                                    <option value="High">High</option>
+                                    <option value="Medium">Medium</option>
+                                    <option value="Low">Low</option>
+                                </select>
+                            </div>
+                            
+                            <div>
+                                <label class="block text-sm font-medium text-slate-700 mb-2">Due Date Range</label>
+                                <select id="dateFilter" onchange="filterGoals()" class="w-full px-3 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all bg-white">
+                                    <option value="">All Time</option>
+                                    <option value="overdue">Overdue</option>
+                                    <option value="week">Next 7 Days</option>
+                                    <option value="month">Next 30 Days</option>
+                                    <option value="quarter">Next 90 Days</option>
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div id="filteredGoals" class="space-y-3">
+                    <p class="text-slate-400 text-sm italic">Use filters above to search goals</p>
+                </div>
+            </section>
+        <!-- Section 5: Goals List -->
+            <!-- The filteredGoals div above serves as the goals list -->
+
+            <!-- Section 6: Add / Manage Goal -->
+            <section class="bg-white rounded-xl shadow-sm border border-slate-200 p-6 opacity-90">
+                <h2 class="text-xl font-semibold mb-6 text-slate-800">Add / Manage Goal</h2>
+                
+                <form id="goalForm" class="space-y-6">
+                    <!-- Goal Basics Section -->
                     <div>
-                        <label class="block text-sm font-medium text-gray-700 mb-1">Goal Description</label>
-                        <textarea id="goalDescription" rows="2" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"></textarea>
+                        <p class="text-xs font-medium text-slate-500 uppercase tracking-wide mb-3">Goal Basics</p>
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <div>
+                                <label class="block text-sm font-medium text-slate-700 mb-2">Goal Name *</label>
+                                <input type="text" id="goalName" required class="w-full px-3 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all">
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium text-slate-700 mb-2">Target Completion Date *</label>
+                                <input type="date" id="targetDate" required class="w-full px-3 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all">
+                            </div>
+                        </div>
                     </div>
                     
+                    <!-- Description & Outcome Section -->
                     <div>
-                        <label class="block text-sm font-medium text-gray-700 mb-1">What will I achieve from this goal</label>
-                        <textarea id="goalOutcome" rows="2" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"></textarea>
-                    </div>
-                    
-                    <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
-                        <div>
-                            <label class="block text-sm font-medium text-gray-700 mb-1">Priority</label>
-                            <select id="goalPriority" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
-                                <option value="Low">Low</option>
-                                <option value="Medium" selected>Medium</option>
-                                <option value="High">High</option>
-                            </select>
-                        </div>
-                        <div>
-                            <label class="block text-sm font-medium text-gray-700 mb-1">Status</label>
-                            <select id="goalStatus" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
-                                <option value="todo" selected>To Do</option>
-                                <option value="hold">On Hold</option>
-                                <option value="done">Done</option>
-                                <option value="deferred">Deferred for Later</option>
-                            </select>
-                        </div>
-                        <div>
-                            <label class="block text-sm font-medium text-gray-700 mb-1">Progress (<span id="progressValue">0</span>%)</label>
-                            <input type="range" id="goalProgress" min="0" max="100" value="0" class="w-full" oninput="updateProgressValue(this.value)">
+                        <p class="text-xs font-medium text-slate-500 uppercase tracking-wide mb-3">Details</p>
+                        <div class="space-y-4">
+                            <div>
+                                <label class="block text-sm font-medium text-slate-700 mb-2">Goal Description</label>
+                                <textarea id="goalDescription" rows="2" class="w-full px-3 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all resize-none" placeholder="Describe your goal..."></textarea>
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium text-slate-700 mb-2">What will I achieve from this goal</label>
+                                <textarea id="goalOutcome" rows="2" class="w-full px-3 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all resize-none" placeholder="Expected outcome..."></textarea>
+                            </div>
                         </div>
                     </div>
                     
-                    <div class="flex gap-2">
-                        <button type="submit" class="bg-blue-500 text-white px-4 py-2 rounded-md hover:bg-blue-600 transition">Add Goal</button>
-                        <button type="button" onclick="resetForm()" class="bg-gray-300 text-gray-700 px-4 py-2 rounded-md hover:bg-gray-400 transition">Clear</button>
+                    <!-- Status & Progress Section -->
+                    <div>
+                        <p class="text-xs font-medium text-slate-500 uppercase tracking-wide mb-3">Status & Progress</p>
+                        <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                            <div>
+                                <label class="block text-sm font-medium text-slate-700 mb-2">Priority</label>
+                                <select id="goalPriority" class="w-full px-3 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all">
+                                    <option value="Low">Low</option>
+                                    <option value="Medium" selected>Medium</option>
+                                    <option value="High">High</option>
+                                </select>
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium text-slate-700 mb-2">Status</label>
+                                <select id="goalStatus" class="w-full px-3 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all">
+                                    <option value="todo" selected>To Do</option>
+                                    <option value="hold">On Hold</option>
+                                    <option value="done">Done</option>
+                                    <option value="deferred">Deferred for Later</option>
+                                </select>
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium text-slate-700 mb-2">Progress (<span id="progressValue" class="font-medium text-blue-600">0</span>%)</label>
+                                <input type="range" id="goalProgress" min="0" max="100" value="0" class="w-full h-2 bg-slate-200 rounded-lg appearance-none cursor-pointer accent-blue-600" oninput="updateProgressValue(this.value)">
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="flex gap-3 pt-2">
+                        <button type="submit" class="bg-slate-600 text-white px-6 py-2.5 rounded-lg hover:bg-slate-700 transition-colors font-medium text-sm">Add Goal</button>
+                        <button type="button" onclick="resetForm()" class="bg-slate-100 text-slate-700 px-6 py-2.5 rounded-lg hover:bg-slate-200 transition-colors font-medium text-sm">Clear</button>
                     </div>
                 </form>
             </section>
 
-            <!-- Section 2: Goals Needing Immediate Attention -->
-            <section class="bg-white rounded-lg shadow-md p-6">
-                <h2 class="text-lg font-semibold mb-4 text-red-600">⚠️ Goals Needing Immediate Attention</h2>
-                <div id="immediateAttention" class="space-y-3">
-                    <p class="text-gray-500 text-sm">No goals need immediate attention</p>
-                </div>
-            </section>
-
-            <!-- Section 3: Goals Needing Attention -->
-            <section class="bg-white rounded-lg shadow-md p-6">
-                <h2 class="text-lg font-semibold mb-4 text-yellow-600">📋 Goals Needing Attention</h2>
-                <div id="needsAttention" class="space-y-3">
-                    <p class="text-gray-500 text-sm">No goals need attention</p>
-                </div>
-            </section>
-
-            <!-- Section 4: Completion Score -->
-            <section class="bg-white rounded-lg shadow-md p-6">
-                <h2 class="text-lg font-semibold mb-4 text-gray-900">Overall Completion Score</h2>
-                <div class="flex items-center justify-center">
-                    <div class="relative">
-                        <svg class="w-32 h-32">
-                            <circle cx="64" cy="64" r="56" stroke="#e5e7eb" stroke-width="8" fill="none"></circle>
-                            <circle id="progressRing" cx="64" cy="64" r="56" stroke="#3b82f6" stroke-width="8" fill="none" 
-                                    stroke-dasharray="351.86" stroke-dashoffset="351.86" class="progress-ring transition-all duration-500"></circle>
-                        </svg>
-                        <div class="absolute inset-0 flex items-center justify-center">
-                            <span id="completionScore" class="text-3xl font-bold text-gray-900">0%</span>
-                        </div>
-                    </div>
-                </div>
-            </section>
-
-            <!-- Section 5: Search & Filter Goals -->
-            <section class="bg-white rounded-lg shadow-md p-6">
-                <h2 class="text-lg font-semibold mb-4 text-gray-900">Search & Filter Goals</h2>
-                
-                <div class="space-y-4">
-                    <div>
-                        <input type="text" id="searchInput" placeholder="Search goals..." 
-                               class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                               oninput="filterGoals()">
-                    </div>
-                    
-                    <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
-                        <div>
-                            <label class="block text-sm font-medium text-gray-700 mb-1">Status</label>
-                            <select id="statusFilter" onchange="filterGoals()" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
-                                <option value="">All Status</option>
-                                <option value="todo">To Do</option>
-                                <option value="hold">On Hold</option>
-                                <option value="done">Done</option>
-                                <option value="deferred">Deferred for Later</option>
-                                <option value="archived">Archived</option>
-                            </select>
-                        </div>
-                        
-                        <div>
-                            <label class="block text-sm font-medium text-gray-700 mb-1">Priority</label>
-                            <select id="priorityFilter" onchange="filterGoals()" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
-                                <option value="">All Priority</option>
-                                <option value="High">High</option>
-                                <option value="Medium">Medium</option>
-                                <option value="Low">Low</option>
-                            </select>
-                        </div>
-                        
-                        <div>
-                            <label class="block text-sm font-medium text-gray-700 mb-1">Due Date Range</label>
-                            <select id="dateFilter" onchange="filterGoals()" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
-                                <option value="">All Time</option>
-                                <option value="overdue">Overdue</option>
-                                <option value="week">Next 7 Days</option>
-                                <option value="month">Next 30 Days</option>
-                                <option value="quarter">Next 90 Days</option>
-                            </select>
-                        </div>
-                    </div>
-                </div>
-                
-                <div id="filteredGoals" class="mt-6 space-y-3">
-                    <p class="text-gray-500 text-sm">Use filters above to search goals</p>
-                </div>
-            </section>
         </div>
     </div>
 

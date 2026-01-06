@@ -211,7 +211,7 @@ async makeRequest(action, params = {}) {
         );
 
         if (urgentGoals.length === 0) {
-            container.innerHTML = '<p class="text-gray-500 text-sm">No goals need immediate attention</p>';
+            container.innerHTML = '<p class="text-slate-400 text-sm italic">No goals need immediate attention</p>';
             return;
         }
 
@@ -230,7 +230,7 @@ async makeRequest(action, params = {}) {
         );
 
         if (attentionGoals.length === 0) {
-            container.innerHTML = '<p class="text-gray-500 text-sm">No goals need attention</p>';
+            container.innerHTML = '<p class="text-slate-400 text-sm italic">No goals need attention</p>';
             return;
         }
 
@@ -239,41 +239,59 @@ async makeRequest(action, params = {}) {
 
     // Create goal card HTML
     createGoalCard(goal, type) {
-        // Card styling based on status
-        let cardClass = 'goal-card border-l-4 p-4 rounded-r-lg fade-in ';
-        let daysClass = goal.days_remaining <= 3 ? 'text-red-600 font-bold' : 'text-gray-600';
-        let daysDisplay = '';
+        // Priority-based left accent border
+        const priorityBorder = {
+            'High': 'border-l-red-500',
+            'Medium': 'border-l-amber-500', 
+            'Low': 'border-l-emerald-500'
+        };
         
+        // Status-based background
+        let bgClass = 'bg-white';
         if (goal.status === 'done') {
-            cardClass += 'border-green-300 bg-green-50';
-            daysDisplay = '<span class="text-green-600 text-sm font-medium">✓ Completed</span>';
+            bgClass = 'bg-emerald-50';
         } else if (goal.status === 'hold') {
-            cardClass += 'border-orange-300 bg-orange-50';
-            daysDisplay = '<span class="text-orange-600 text-sm">⏸ On Hold</span>';
+            bgClass = 'bg-amber-50';
         } else if (goal.status === 'deferred') {
-            cardClass += 'border-gray-300 bg-gray-50';
-            daysDisplay = '<span class="text-gray-600 text-sm">⏱ Deferred</span>';
+            bgClass = 'bg-slate-50';
         } else if (goal.status === 'archived') {
-            cardClass += 'border-red-300 bg-red-50 opacity-75';
-            daysDisplay = '<span class="text-red-600 text-sm">📦 Archived</span>';
-        } else {
-            // Default for 'todo' status - use urgency styling
-            const urgencyClass = type === 'urgent' ? 'border-red-300 bg-red-50' : 'border-yellow-300 bg-yellow-50';
-            cardClass += urgencyClass;
-            daysDisplay = `<span class="${daysClass} text-sm">${goal.days_remaining} days left</span>`;
+            bgClass = 'bg-red-50 opacity-75';
         }
         
-        const priorityColor = goal.priority === 'High' ? 'red' : goal.priority === 'Medium' ? 'yellow' : 'green';
+        // Days display logic
+        let daysDisplay = '';
+        let daysClass = goal.days_remaining <= 3 ? 'text-red-600 font-medium' : 'text-slate-600';
         
-        // Status styling
+        if (goal.status === 'done') {
+            daysDisplay = '<span class="text-emerald-600 text-xs font-medium">✓ Completed</span>';
+        } else if (goal.status === 'hold') {
+            daysDisplay = '<span class="text-amber-600 text-xs">⏸ On Hold</span>';
+        } else if (goal.status === 'deferred') {
+            daysDisplay = '<span class="text-slate-500 text-xs">⏱ Deferred</span>';
+        } else if (goal.status === 'archived') {
+            daysDisplay = '<span class="text-red-600 text-xs">📦 Archived</span>';
+        } else {
+            daysDisplay = `<span class="${daysClass} text-xs">${goal.days_remaining} days left</span>`;
+        }
+        
+        // Priority colors for badges
+        const priorityColors = {
+            'High': 'red',
+            'Medium': 'amber',
+            'Low': 'emerald'
+        };
+        const priorityColor = priorityColors[goal.priority] || 'slate';
+        
+        // Status colors for badges
         const statusColors = {
             'todo': 'blue',
-            'hold': 'orange', 
-            'done': 'green',
-            'deferred': 'gray',
+            'hold': 'amber', 
+            'done': 'emerald',
+            'deferred': 'slate',
             'archived': 'red'
         };
-        const statusColor = statusColors[goal.status] || 'blue';
+        const statusColor = statusColors[goal.status] || 'slate';
+        
         const statusLabels = {
             'todo': 'To Do',
             'hold': 'On Hold',
@@ -284,44 +302,44 @@ async makeRequest(action, params = {}) {
         const statusLabel = statusLabels[goal.status] || goal.status;
 
         return `
-            <div class="${cardClass}">
-                <div class="flex justify-between items-start mb-2">
-                    <h3 class="font-semibold text-gray-900">${goal.name}</h3>
+            <div class="goal-card ${bgClass} border-l-4 ${priorityBorder[goal.priority]} border border-slate-200 rounded-xl p-5 fade-in hover:shadow-md transition-all">
+                <div class="flex justify-between items-start mb-3">
+                    <h3 class="font-semibold text-slate-900 text-base flex-1 mr-3">${goal.name}</h3>
                     <div class="flex gap-2 flex-wrap">
-                        <span class="px-2 py-1 text-xs rounded-full bg-${statusColor}-100 text-${statusColor}-800">
+                        <span class="px-2.5 py-1 text-xs font-medium rounded-full bg-${statusColor}-100 text-${statusColor}-700 border border-${statusColor}-200">
                             ${statusLabel}
                         </span>
-                        <span class="px-2 py-1 text-xs rounded-full bg-${priorityColor}-100 text-${priorityColor}-800">
+                        <span class="px-2.5 py-1 text-xs font-medium rounded-full bg-${priorityColor}-100 text-${priorityColor}-700 border border-${priorityColor}-200">
                             ${goal.priority}
                         </span>
                         ${daysDisplay}
                     </div>
                 </div>
                 
-                ${goal.description ? `<p class="text-gray-600 text-sm mb-2">${goal.description}</p>` : ''}
+                ${goal.description ? `<p class="text-slate-600 text-sm mb-4 leading-relaxed">${goal.description}</p>` : ''}
                 
-                <div class="mb-3">
-                    <div class="flex justify-between text-sm mb-1">
-                        <span class="text-gray-500">Progress</span>
-                        <span class="font-medium">${goal.progress}%</span>
+                <div class="mb-4">
+                    <div class="flex justify-between items-center mb-2">
+                        <span class="text-xs font-medium text-slate-500 uppercase tracking-wide">Progress</span>
+                        <span class="text-sm font-medium text-slate-700">${goal.progress}%</span>
                     </div>
-                    <div class="w-full bg-gray-200 rounded-full h-2">
-                        <div class="bg-blue-500 h-2 rounded-full transition-all duration-300" 
+                    <div class="w-full bg-slate-200 rounded-full h-2.5">
+                        <div class="bg-blue-600 h-2.5 rounded-full transition-all duration-300" 
                              style="width: ${goal.progress}%"></div>
                     </div>
                 </div>
                 
-                <div class="flex gap-2">
+                <div class="flex gap-2 flex-col sm:flex-row">
                     <button onclick="goalTracker.editGoal('${goal.id}')" 
-                            class="text-sm bg-blue-500 text-white px-3 py-1 rounded hover:bg-blue-600 transition">
+                            class="text-sm bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors font-medium order-1">
                         Edit
                     </button>
                     <button onclick="goalTracker.updateProgress('${goal.id}')" 
-                            class="text-sm bg-green-500 text-white px-3 py-1 rounded hover:bg-green-600 transition">
+                            class="text-sm bg-emerald-600 text-white px-4 py-2 rounded-lg hover:bg-emerald-700 transition-colors font-medium order-2">
                         Update Progress
                     </button>
                     <button onclick="goalTracker.archiveGoal('${goal.id}')" 
-                            class="text-sm bg-gray-500 text-white px-3 py-1 rounded hover:bg-gray-600 transition">
+                            class="text-sm bg-slate-600 text-white px-4 py-2 rounded-lg hover:bg-slate-700 transition-colors font-medium order-3">
                         Archive
                     </button>
                 </div>
@@ -489,7 +507,7 @@ async makeRequest(action, params = {}) {
         });
 
         if (filteredGoals.length === 0) {
-            container.innerHTML = '<p class="text-gray-500 text-sm">No goals match your filters</p>';
+            container.innerHTML = '<p class="text-slate-400 text-sm italic">No goals match your filters</p>';
             return;
         }
 
