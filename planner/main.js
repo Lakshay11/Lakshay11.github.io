@@ -1,8 +1,7 @@
 // Main JavaScript for Goal Tracker App
 class GoalTracker {
     constructor() {
-        // this.API_URL = 'https://script.google.com/macros/s/AKfycbzOyNMS_gNV5mnBmYTgCpHzIMdwn473TasQjOThMryWGy9oCSo6BBATHgvRNcZzNURg/exec'; // Google Apps Script URL
-        this.API_URL = "https://script.google.com/macros/s/AKfycbzckOGRzVRoSPyO8Of5iRKYDh7OU0OZ9R7PffN4xttF9tjE8nzvTnkRSjbolUPYZDo/exec"
+        this.API_URL = "https://script.google.com/macros/s/AKfycbzZ3mh6t9CLMVzb-nB06hmr3nwpQbfrHR6h-OEhS649H6nQnjp3A1XS_0CEv61XJX0P/exec"
         this.passphrase = localStorage.getItem('goalTrackerPassphrase') || '';
         this.goals = [];
         this.editingGoalId = null;
@@ -176,8 +175,8 @@ async makeRequest(action, params = {}) {
             outcome: document.getElementById('goalOutcome').value.trim(),
             target_date: document.getElementById('targetDate').value,
             priority: document.getElementById('goalPriority').value,
-            progress: parseInt(document.getElementById('goalProgress').value),
-            status: this.editingGoalId ? undefined : 'active'
+            status: document.getElementById('goalStatus').value,
+            progress: parseInt(document.getElementById('goalProgress').value)
         };
     }
 
@@ -185,6 +184,7 @@ async makeRequest(action, params = {}) {
     resetForm() {
         document.getElementById('goalForm').reset();
         document.getElementById('progressValue').textContent = '0';
+        document.getElementById('goalStatus').value = 'todo';
         this.editingGoalId = null;
         
         // Change button text back
@@ -204,7 +204,7 @@ async makeRequest(action, params = {}) {
     updateImmediateAttention() {
         const container = document.getElementById('immediateAttention');
         const urgentGoals = this.goals.filter(goal => 
-            goal.status === 'active' && 
+            goal.status === 'todo' && 
             goal.progress < 40 && 
             goal.days_remaining <= 7 && 
             goal.days_remaining >= 0
@@ -222,7 +222,7 @@ async makeRequest(action, params = {}) {
     updateNeedsAttention() {
         const container = document.getElementById('needsAttention');
         const attentionGoals = this.goals.filter(goal => 
-            goal.status === 'active' && 
+            goal.status === 'todo' && 
             goal.progress < 70 && 
             goal.days_remaining <= 21 && 
             goal.days_remaining >= 0 &&
@@ -239,21 +239,62 @@ async makeRequest(action, params = {}) {
 
     // Create goal card HTML
     createGoalCard(goal, type) {
-        const urgencyClass = type === 'urgent' ? 'border-red-300 bg-red-50' : 'border-yellow-300 bg-yellow-50';
-        const daysClass = goal.days_remaining <= 3 ? 'text-red-600 font-bold' : 'text-gray-600';
+        // Card styling based on status
+        let cardClass = 'goal-card border-l-4 p-4 rounded-r-lg fade-in ';
+        let daysClass = goal.days_remaining <= 3 ? 'text-red-600 font-bold' : 'text-gray-600';
+        let daysDisplay = '';
+        
+        if (goal.status === 'done') {
+            cardClass += 'border-green-300 bg-green-50';
+            daysDisplay = '<span class="text-green-600 text-sm font-medium">✓ Completed</span>';
+        } else if (goal.status === 'hold') {
+            cardClass += 'border-orange-300 bg-orange-50';
+            daysDisplay = '<span class="text-orange-600 text-sm">⏸ On Hold</span>';
+        } else if (goal.status === 'deferred') {
+            cardClass += 'border-gray-300 bg-gray-50';
+            daysDisplay = '<span class="text-gray-600 text-sm">⏱ Deferred</span>';
+        } else if (goal.status === 'archived') {
+            cardClass += 'border-red-300 bg-red-50 opacity-75';
+            daysDisplay = '<span class="text-red-600 text-sm">📦 Archived</span>';
+        } else {
+            // Default for 'todo' status - use urgency styling
+            const urgencyClass = type === 'urgent' ? 'border-red-300 bg-red-50' : 'border-yellow-300 bg-yellow-50';
+            cardClass += urgencyClass;
+            daysDisplay = `<span class="${daysClass} text-sm">${goal.days_remaining} days left</span>`;
+        }
+        
         const priorityColor = goal.priority === 'High' ? 'red' : goal.priority === 'Medium' ? 'yellow' : 'green';
+        
+        // Status styling
+        const statusColors = {
+            'todo': 'blue',
+            'hold': 'orange', 
+            'done': 'green',
+            'deferred': 'gray',
+            'archived': 'red'
+        };
+        const statusColor = statusColors[goal.status] || 'blue';
+        const statusLabels = {
+            'todo': 'To Do',
+            'hold': 'On Hold',
+            'done': 'Done', 
+            'deferred': 'Deferred',
+            'archived': 'Archived'
+        };
+        const statusLabel = statusLabels[goal.status] || goal.status;
 
         return `
-            <div class="goal-card border-l-4 ${urgencyClass} p-4 rounded-r-lg fade-in">
+            <div class="${cardClass}">
                 <div class="flex justify-between items-start mb-2">
                     <h3 class="font-semibold text-gray-900">${goal.name}</h3>
-                    <div class="flex gap-2">
+                    <div class="flex gap-2 flex-wrap">
+                        <span class="px-2 py-1 text-xs rounded-full bg-${statusColor}-100 text-${statusColor}-800">
+                            ${statusLabel}
+                        </span>
                         <span class="px-2 py-1 text-xs rounded-full bg-${priorityColor}-100 text-${priorityColor}-800">
                             ${goal.priority}
                         </span>
-                        <span class="${daysClass} text-sm">
-                            ${goal.days_remaining} days left
-                        </span>
+                        ${daysDisplay}
                     </div>
                 </div>
                 
@@ -290,7 +331,7 @@ async makeRequest(action, params = {}) {
 
     // Update completion score
     updateCompletionScore() {
-        const activeGoals = this.goals.filter(goal => goal.status === 'active');
+        const activeGoals = this.goals.filter(goal => goal.status === 'todo');
         
         if (activeGoals.length === 0) {
             document.getElementById('completionScore').textContent = '0%';
@@ -322,6 +363,7 @@ async makeRequest(action, params = {}) {
         document.getElementById('goalOutcome').value = goal.outcome || '';
         document.getElementById('targetDate').value = goal.target_date;
         document.getElementById('goalPriority').value = goal.priority;
+        document.getElementById('goalStatus').value = goal.status || 'todo';
         document.getElementById('goalProgress').value = goal.progress;
         document.getElementById('progressValue').textContent = goal.progress;
 
@@ -353,10 +395,14 @@ async makeRequest(action, params = {}) {
     // Save progress update
     async saveProgressUpdate(goalId, progress) {
         try {
+            const goal = this.goals.find(g => g.id === goalId);
+            const currentStatus = goal ? goal.status : 'todo';
+            const newStatus = progress === 100 ? 'done' : currentStatus;
+            
             const response = await this.makeRequest('update', {
                 id: goalId,
                 progress: progress,
-                status: progress === 100 ? 'completed' : 'active'
+                status: newStatus
             });
 
             if (response.success) {
