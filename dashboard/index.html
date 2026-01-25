@@ -49,13 +49,24 @@
 <script>
 /* ================= CONFIG ================= */
 
-const API_URL = 'https://script.google.com/macros/s/AKfycbz0jP4OuKNjzM0eXDmVBrXkOPbPAMc3-fyGO6XEgq_k1KrRleCnRBfvEp1Nid6JzNKbGg/exec';
+const API_URL = 'https://script.google.com/macros/s/AKfycbxXn0cCQ83E-7mpdR1b3Bup5Zr3FntgUwztmMk2iUFuBLcd9eUt-u5Ez9QRd63LWQmr9w/exec';
+
+// Debug logging
+function debugLog(message, data = null) {
+  console.log('[DASHBOARD DEBUG]', message, data || '');
+  const statusEl = document.getElementById('status');
+  if (statusEl) {
+    const currentContent = statusEl.innerHTML;
+    statusEl.innerHTML = currentContent + `<br><small class="text-gray-600">[DEBUG] ${message}</small>`;
+    statusEl.classList.remove('hidden');
+  }
+}
 
 /* ================= HELPERS ================= */
 
 function setStatus(msg) {
   const el = document.getElementById('status');
-  el.textContent = msg;
+  el.innerHTML = msg;
   el.classList.remove('hidden');
 }
 
@@ -78,14 +89,36 @@ async function bootstrapIfNeeded() {
 }
 
 async function bootstrap() {
+  debugLog('Starting bootstrap...');
+  debugLog('API URL:', API_URL);
+  
   try {
-    const res = await fetch(`${API_URL}?action=bootstrap`);
-    const data = await res.json();
+    debugLog('Making bootstrap request...');
+    const url = `${API_URL}?action=bootstrap`;
+    debugLog('Full URL:', url);
+    
+    const res = await fetch(url);
+    debugLog('Response status:', res.status);
+    debugLog('Response headers:', [...res.headers.entries()]);
+    
+    const responseText = await res.text();
+    debugLog('Raw response:', responseText);
+    
+    let data;
+    try {
+      data = JSON.parse(responseText);
+      debugLog('Parsed JSON:', data);
+    } catch (parseErr) {
+      debugLog('JSON parse failed:', parseErr.message);
+      throw new Error('Invalid JSON response: ' + responseText);
+    }
     
     if (data.error) {
+      debugLog('API returned error:', data.error);
       throw new Error(data.error);
     }
     
+    debugLog('Bootstrap successful, storing token and email');
     localStorage.setItem('dash_token', data.token);
     localStorage.setItem('dash_email', data.email);
     
@@ -93,6 +126,7 @@ async function bootstrap() {
     loadFinance();
     
   } catch (err) {
+    debugLog('Bootstrap error:', err.message);
     setStatus('Bootstrap failed: ' + err.message);
   }
 }
@@ -100,28 +134,44 @@ async function bootstrap() {
 /* ================= DATA LOAD ================= */
 
 async function loadFinance() {
+  debugLog('Starting loadFinance...');
   clearStatus();
 
   const ready = await bootstrapIfNeeded();
-  if (!ready) return;
+  if (!ready) {
+    debugLog('Bootstrap needed, stopping loadFinance');
+    return;
+  }
 
   const token = localStorage.getItem('dash_token');
   const email = localStorage.getItem('dash_email');
+  
+  debugLog('Retrieved token from localStorage:', token ? 'exists' : 'missing');
+  debugLog('Retrieved email from localStorage:', email);
 
   try {
-    const res = await fetch(
-      `${API_URL}?action=finance_p1&token=${encodeURIComponent(token)}&email=${encodeURIComponent(email)}`
-    );
-
-    const data = await res.json();
+    const url = `${API_URL}?action=finance_p1&token=${encodeURIComponent(token)}&email=${encodeURIComponent(email)}`;
+    debugLog('Finance request URL:', url);
+    
+    const res = await fetch(url);
+    debugLog('Finance response status:', res.status);
+    
+    const responseText = await res.text();
+    debugLog('Finance raw response:', responseText);
+    
+    const data = JSON.parse(responseText);
+    debugLog('Finance parsed data:', data);
 
     if (data.error) {
+      debugLog('Finance API error:', data.error);
       throw new Error(data.error);
     }
 
+    debugLog('Finance data loaded successfully');
     renderFinance(data);
 
   } catch (err) {
+    debugLog('Finance load error:', err.message);
     setStatus('Access denied or token expired. Re-run bootstrap.');
   }
 }
