@@ -209,5 +209,375 @@
 
   </div>
 
+<script>
+const API_URL = 'https://script.google.com/macros/s/AKfycbwCNTnUNjp5X-AE1DThKDD_Fm1gwnrCr5F41Sq5I5lBsFL1Y5EnBtyqb9UojfYA6_d4pA/exec';
+
+// Session Management
+function isAuthenticated() {
+  return sessionStorage.getItem('dashboard_auth') === 'true';
+}
+
+function setAuthenticated(password) {
+  sessionStorage.setItem('dashboard_auth', 'true');
+  sessionStorage.setItem('dashboard_password', password); // Store for session
+}
+
+function getStoredPassword() {
+  return sessionStorage.getItem('dashboard_password');
+}
+
+function clearAuth() {
+  sessionStorage.removeItem('dashboard_auth');
+  sessionStorage.removeItem('dashboard_password');
+}
+
+// UI Functions
+function setStatus(msg, isError = false) {
+  const el = document.getElementById('status');
+  el.innerHTML = msg;
+  el.classList.remove('hidden', 'text-red-600', 'text-green-600');
+  if (isError) {
+    el.classList.add('text-red-600');
+  } else {
+    el.classList.add('text-green-600');
+  }
+}
+
+function clearStatus() {
+  document.getElementById('status').classList.add('hidden');
+}
+
+// Time and Progress Functions
+function updateTimeAndProgress() {
+  const now = new Date();
+  
+  // Update time (AM/PM format)
+  const hours = now.getHours();
+  const minutes = now.getMinutes().toString().padStart(2, '0');
+  const ampm = hours >= 12 ? 'PM' : 'AM';
+  const displayHours = hours % 12 || 12;
+  
+  document.getElementById('current-time').textContent = 
+    `${displayHours}:${minutes} ${ampm}`;
+  
+  // Update date
+  const days = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
+  const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+  
+  const dayName = days[now.getDay()];
+  const month = months[now.getMonth()];
+  const date = now.getDate();
+  
+  document.getElementById('current-date').textContent = `${dayName}, ${month} ${date}`;
+  
+  // Calculate day progress
+  const startOfDay = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 0, 0, 0);
+  const endOfDay = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 24, 0, 0);
+  
+  const totalDayMs = endOfDay - startOfDay;
+  const elapsedMs = now - startOfDay;
+  const percentage = Math.min(100, Math.max(0, (elapsedMs / totalDayMs) * 100));
+  
+  const hoursSpent = elapsedMs / (1000 * 60 * 60);
+  
+  // Update progress display
+  document.getElementById('day-percentage').textContent = `${Math.round(percentage)}%`;
+  document.getElementById('day-progress-bar').style.width = `${percentage}%`;
+  document.getElementById('hours-spent').textContent = `${hoursSpent.toFixed(1)} hours spent`;
+}
+
+// Collapsible Sections
+function toggleSection(sectionId) {
+  const content = document.getElementById(sectionId + '-content');
+  const toggle = document.getElementById(sectionId + '-toggle');
+  
+  if (content.classList.contains('expanded')) {
+    content.classList.remove('expanded');
+    toggle.textContent = '▼';
+  } else {
+    content.classList.add('expanded');
+    toggle.textContent = '▲';
+  }
+}
+
+// Authentication
+async function authenticate() {
+  const password = document.getElementById('password').value;
+  
+  if (!password) {
+    setStatus('Please enter a password', true);
+    return;
+  }
+  
+  try {
+    setStatus('Authenticating...');
+    
+    // Use POST to avoid Google Script redirects
+    const formData = new FormData();
+    formData.append('action', 'dashboard');
+    formData.append('password', password);
+    
+    const res = await fetch(API_URL, {
+      method: 'POST',
+      body: formData,
+      mode: 'cors'
+    });
+    
+    const responseText = await res.text();
+    console.log('Auth response:', responseText);
+    const data = JSON.parse(responseText);
+    
+    if (data.error) {
+      throw new Error(data.error);
+    }
+    
+    setAuthenticated(password); // Store password for session
+    showDashboard();
+    renderDashboard(data);
+    setStatus('Authentication successful', false);
+    setTimeout(clearStatus, 2000);
+    
+  } catch (err) {
+    console.error('Auth error:', err);
+    setStatus('Access denied. Wrong password.', true);
+  }
+}
+
+function logout() {
+  clearAuth();
+  hideDashboard();
+  setStatus('Logged out successfully', false);
+  setTimeout(clearStatus, 2000);
+}
+
+function showDashboard() {
+  document.getElementById('auth-section').classList.add('hidden');
+  document.getElementById('dashboard-content').classList.remove('hidden');
+}
+
+function hideDashboard() {
+  document.getElementById('auth-section').classList.remove('hidden');
+  document.getElementById('dashboard-content').classList.add('hidden');
+  document.getElementById('password').value = '';
+}
+
+// Data Loading
+async function loadAllData() {
+  if (!isAuthenticated()) {
+    setStatus('Please authenticate first', true);
+    return;
+  }
+  
+  const storedPassword = getStoredPassword();
+  if (!storedPassword) {
+    setStatus('Session expired, please login again', true);
+    logout();
+    return;
+  }
+  
+  try {
+    setStatus('Loading data...');
+    
+    // Use POST to avoid Google Script redirects
+    const formData = new FormData();
+    formData.append('action', 'dashboard');
+    formData.append('password', storedPassword);
+    
+    const res = await fetch(API_URL, {
+      method: 'POST',
+      body: formData,
+      mode: 'cors'
+    });
+    
+    const responseText = await res.text();
+    console.log('Data response:', responseText);
+    const data = JSON.parse(responseText);
+    
+    if (data.error) {
+      throw new Error(data.error);
+    }
+    
+    renderDashboard(data);
+    setStatus('Data refreshed successfully', false);
+    setTimeout(clearStatus, 2000);
+    
+  } catch (err) {
+    console.error('Data error:', err);
+    setStatus('Failed to load data', true);
+  }
+}
+
+// Rendering Functions
+function renderDashboard(data) {
+  // Render Today's Tasks (P1 only)
+  renderTodayTasks(data.tasks.today);
+  
+  // Render Week's Tasks (P1 only)
+  renderWeekTasks(data.tasks.week);
+  
+  // Render Targets
+  renderTargets(data.targets);
+  
+  // Render Finance Summary
+  renderFinanceSummary(data.finances);
+  
+  // Render Finance Details
+  renderFinanceDetails(data.finances);
+}
+
+function renderTodayTasks(tasks) {
+  const container = document.getElementById('today-tasks');
+  
+  if (!tasks || tasks.length === 0) {
+    container.innerHTML = '<div class="text-center text-gray-500 text-sm">No P1 tasks for today</div>';
+    return;
+  }
+  
+  container.innerHTML = tasks.map(task => `
+    <div class="border-l-4 border-blue-500 pl-3 py-1">
+      <div class="font-medium text-sm">${task.task}</div>
+      <div class="text-xs text-gray-500">${task.status}</div>
+    </div>
+  `).join('');
+}
+
+function renderWeekTasks(tasks) {
+  const container = document.getElementById('week-tasks');
+  
+  if (!tasks || tasks.length === 0) {
+    container.innerHTML = '<div class="text-center text-gray-500 text-sm">No P1 tasks this week</div>';
+    return;
+  }
+  
+  container.innerHTML = tasks.map(task => `
+    <div class="border-l-4 border-green-500 pl-3 py-1">
+      <div class="font-medium text-sm">${task.task}</div>
+      <div class="text-xs text-gray-500">${formatDate(task.date)} • ${task.status}</div>
+    </div>
+  `).join('');
+}
+
+function renderTargets(targets) {
+  const container = document.getElementById('targets');
+  
+  if (!targets || targets.length === 0) {
+    container.innerHTML = '<div class="text-center text-gray-500 text-sm">No targets set</div>';
+    return;
+  }
+  
+  container.innerHTML = targets.map(target => `
+    <div class="border-l-4 border-indigo-500 pl-3 py-2">
+      <div class="flex justify-between items-start">
+        <div class="flex-1">
+          <div class="font-medium text-sm">${target.goal}</div>
+          <div class="text-xs text-gray-500">By ${formatDate(target.completionDate)} • ${target.owner}</div>
+        </div>
+        <div class="ml-3 text-right">
+          <div class="text-lg font-bold ${getProgressColor(target.progress)}">${target.progress}%</div>
+          <div class="w-16 bg-gray-200 rounded-full h-2 mt-1">
+            <div class="bg-indigo-600 h-2 rounded-full transition-all duration-500" style="width: ${target.progress}%"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  `).join('');
+}
+
+function getProgressColor(progress) {
+  if (progress >= 75) return 'text-green-600';
+  if (progress >= 50) return 'text-yellow-600';
+  if (progress >= 25) return 'text-orange-600';
+  return 'text-red-600';
+}
+
+function renderFinanceSummary(finances) {
+  const container = document.getElementById('finance-summary');
+  
+  const summary = `
+    <div class="space-y-3">
+      <div class="flex justify-between items-center p-2 bg-red-50 rounded">
+        <span class="text-sm font-medium">P1 Total:</span>
+        <span class="text-sm font-bold text-red-600">₹${finances.p1?.total?.toLocaleString() || 0}</span>
+      </div>
+      <div class="flex justify-between items-center p-2 bg-orange-50 rounded">
+        <span class="text-sm font-medium">P2 Total:</span>
+        <span class="text-sm font-bold text-orange-600">₹${finances.p2?.total?.toLocaleString() || 0}</span>
+      </div>
+      <div class="flex justify-between items-center p-2 bg-yellow-50 rounded">
+        <span class="text-sm font-medium">P3 Total:</span>
+        <span class="text-sm font-bold text-yellow-600">₹${finances.p3?.total?.toLocaleString() || 0}</span>
+      </div>
+      <div class="flex justify-between items-center p-2 bg-gray-100 rounded font-bold">
+        <span class="text-sm">Grand Total:</span>
+        <span class="text-sm">₹${((finances.p1?.total || 0) + (finances.p2?.total || 0) + (finances.p3?.total || 0)).toLocaleString()}</span>
+      </div>
+    </div>
+  `;
+  
+  container.innerHTML = summary;
+}
+
+function renderFinanceDetails(finances) {
+  // Render P1 Finance
+  renderFinanceTable('p1-finance', finances.p1);
+  
+  // Render P2 Finance  
+  renderFinanceTable('p2-finance', finances.p2);
+  
+  // Render P3 Finance
+  renderFinanceTable('p3-finance', finances.p3);
+}
+
+function renderFinanceTable(elementId, financeData) {
+  const tbody = document.getElementById(elementId);
+  
+  if (!financeData || !financeData.items || financeData.items.length === 0) {
+    tbody.innerHTML = '<tr><td colspan="2" class="p-4 text-center text-gray-500 text-sm">No items</td></tr>';
+    return;
+  }
+  
+  tbody.innerHTML = financeData.items.slice(0, 5).map(item => `
+    <tr>
+      <td class="p-2 text-sm">${item.item}</td>
+      <td class="p-2 text-right text-sm font-medium">₹${item.cost.toLocaleString()}</td>
+    </tr>
+  `).join('');
+  
+  if (financeData.items.length > 5) {
+    tbody.innerHTML += `<tr><td colspan="2" class="p-2 text-center text-xs text-gray-500">+${financeData.items.length - 5} more items</td></tr>`;
+  }
+}
+
+function formatDate(dateStr) {
+  if (!dateStr) return '';
+  
+  try {
+    const date = new Date(dateStr);
+    if (isNaN(date.getTime())) return dateStr;
+    
+    const options = { month: 'short', day: 'numeric' };
+    return date.toLocaleDateString('en-US', options);
+  } catch (e) {
+    return dateStr;
+  }
+}
+
+// Initialize
+document.addEventListener('DOMContentLoaded', function() {
+  // Start time updates
+  updateTimeAndProgress();
+  setInterval(updateTimeAndProgress, 60000); // Update every minute
+  
+  if (isAuthenticated()) {
+    showDashboard();
+    loadAllData();
+  } else {
+    hideDashboard();
+    setStatus('Enter password to access dashboard');
+  }
+});
+
+</script>
+
 </body>
 </html>
