@@ -3,13 +3,21 @@
 <head>
   <meta charset="UTF-8" />
   <title>P1 Finance Dashboard</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <script src="https://cdn.tailwindcss.com"></script>
 </head>
+
 <body class="bg-gray-100 min-h-screen p-4">
 
   <div class="max-w-5xl mx-auto">
     <h1 class="text-2xl font-bold mb-4">P1 Finance Dashboard</h1>
 
+    <!-- Status -->
+    <div id="status"
+         class="mb-4 text-sm text-red-600 hidden">
+    </div>
+
+    <!-- Finance Table -->
     <div class="bg-white rounded-lg shadow p-4">
       <table class="w-full border">
         <thead class="bg-gray-200">
@@ -19,11 +27,19 @@
             <th class="p-2 border text-right">Cost (₹)</th>
           </tr>
         </thead>
-        <tbody id="finance-body"></tbody>
+
+        <tbody id="finance-body">
+          <tr>
+            <td colspan="3" class="p-4 text-center text-gray-500">
+              Loading…
+            </td>
+          </tr>
+        </tbody>
+
         <tfoot class="bg-gray-100 font-semibold">
           <tr>
             <td colspan="2" class="p-2 border text-right">Total</td>
-            <td id="finance-total" class="p-2 border text-right"></td>
+            <td id="finance-total" class="p-2 border text-right">—</td>
           </tr>
         </tfoot>
       </table>
@@ -31,41 +47,117 @@
   </div>
 
 <script>
-const API_URL = 'https://script.google.com/macros/s/AKfycbyD6zgK8Z2yMKvqjJOPLQ6Eb8SYKY5upo942Yg3H0DUtZOE5ST0wcTCUc3mjaS3tmJamw/exec';
+/* ================= CONFIG ================= */
+
+const API_URL = 'https://script.google.com/macros/s/AKfycbz0jP4OuKNjzM0eXDmVBrXkOPbPAMc3-fyGO6XEgq_k1KrRleCnRBfvEp1Nid6JzNKbGg/exec';
+
+/* ================= HELPERS ================= */
+
+function setStatus(msg) {
+  const el = document.getElementById('status');
+  el.textContent = msg;
+  el.classList.remove('hidden');
+}
+
+function clearStatus() {
+  document.getElementById('status').classList.add('hidden');
+}
+
+/* ================= BOOTSTRAP ================= */
+
+async function bootstrapIfNeeded() {
+  const token = localStorage.getItem('dash_token');
+  const email = localStorage.getItem('dash_email');
+
+  if (token && email) return true;
+
+  setStatus(
+    'First-time setup required. <button onclick="bootstrap()" class="bg-blue-500 text-white px-2 py-1 rounded text-xs ml-2">Bootstrap Now</button>'
+  );
+  return false;
+}
+
+async function bootstrap() {
+  try {
+    const res = await fetch(`${API_URL}?action=bootstrap`);
+    const data = await res.json();
+    
+    if (data.error) {
+      throw new Error(data.error);
+    }
+    
+    localStorage.setItem('dash_token', data.token);
+    localStorage.setItem('dash_email', data.email);
+    
+    clearStatus();
+    loadFinance();
+    
+  } catch (err) {
+    setStatus('Bootstrap failed: ' + err.message);
+  }
+}
+
+/* ================= DATA LOAD ================= */
 
 async function loadFinance() {
+  clearStatus();
+
+  const ready = await bootstrapIfNeeded();
+  if (!ready) return;
+
+  const token = localStorage.getItem('dash_token');
+  const email = localStorage.getItem('dash_email');
+
   try {
-    const res = await fetch(`${API_URL}?action=finance_p1`, {
-      credentials: 'include'
-    });
+    const res = await fetch(
+      `${API_URL}?action=finance_p1&token=${encodeURIComponent(token)}&email=${encodeURIComponent(email)}`
+    );
 
     const data = await res.json();
 
     if (data.error) {
-      alert('Access denied');
-      return;
+      throw new Error(data.error);
     }
 
-    const tbody = document.getElementById('finance-body');
-    tbody.innerHTML = '';
-
-    data.items.forEach(row => {
-      const tr = document.createElement('tr');
-      tr.innerHTML = `
-        <td class="p-2 border">${row.item}</td>
-        <td class="p-2 border">${row.category}</td>
-        <td class="p-2 border text-right">₹${row.cost.toLocaleString()}</td>
-      `;
-      tbody.appendChild(tr);
-    });
-
-    document.getElementById('finance-total')
-      .textContent = `₹${data.total.toLocaleString()}`;
+    renderFinance(data);
 
   } catch (err) {
-    alert('Please login with authorized Google account');
+    setStatus('Access denied or token expired. Re-run bootstrap.');
   }
 }
+
+/* ================= RENDER ================= */
+
+function renderFinance(data) {
+  const tbody = document.getElementById('finance-body');
+  tbody.innerHTML = '';
+
+  if (!data.items.length) {
+    tbody.innerHTML = `
+      <tr>
+        <td colspan="3" class="p-4 text-center text-gray-500">
+          No P1 items found
+        </td>
+      </tr>
+    `;
+    return;
+  }
+
+  data.items.forEach(row => {
+    const tr = document.createElement('tr');
+    tr.innerHTML = `
+      <td class="p-2 border">${row.item}</td>
+      <td class="p-2 border">${row.category}</td>
+      <td class="p-2 border text-right">₹${row.cost.toLocaleString()}</td>
+    `;
+    tbody.appendChild(tr);
+  });
+
+  document.getElementById('finance-total')
+    .textContent = `₹${data.total.toLocaleString()}`;
+}
+
+/* ================= INIT ================= */
 
 loadFinance();
 </script>
