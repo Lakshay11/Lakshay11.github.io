@@ -1,0 +1,581 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Personal Dashboard</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <script src="https://cdn.tailwindcss.com"></script>
+  <style>
+    .collapsible-content {
+      max-height: 0;
+      overflow: hidden;
+      transition: max-height 0.3s ease-out;
+    }
+    .collapsible-content.expanded {
+      max-height: 2000px;
+      transition: max-height 0.5s ease-in;
+    }
+  </style>
+</head>
+
+<body class="bg-gray-100 min-h-screen p-4">
+
+  <div class="max-w-7xl mx-auto">
+    <!-- Header with Time Display -->
+    <div class="flex justify-between items-center mb-6">
+      <h1 class="text-3xl font-bold">Personal Dashboard</h1>
+      
+      <!-- Time Display -->
+      <div class="text-right">
+        <div id="current-time" class="text-2xl font-semibold text-gray-700">Loading...</div>
+        <div id="current-date" class="text-sm text-gray-500 mb-2"></div>
+        
+        <!-- Day Progress -->
+        <div class="bg-gray-100 rounded-lg p-3 min-w-[200px]">
+          <div class="flex justify-between items-center mb-1">
+            <span class="text-xs font-medium text-gray-600">Day Progress</span>
+            <span id="day-percentage" class="text-xs font-bold text-blue-600">0%</span>
+          </div>
+          <div class="w-full bg-gray-200 rounded-full h-2">
+            <div id="day-progress-bar" class="bg-blue-600 h-2 rounded-full transition-all duration-1000" style="width: 0%"></div>
+          </div>
+          <div id="hours-spent" class="text-xs text-gray-500 mt-1">0 hours spent</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Status -->
+    <div id="status" class="mb-4 text-sm text-red-600 hidden"></div>
+
+    <!-- Authentication Section -->
+    <div id="auth-section" class="mb-6 text-center">
+      <input type="password" id="password" class="border px-3 py-2 mr-2" placeholder="Enter password">
+      <button onclick="authenticate()" class="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600">
+        Access Dashboard
+      </button>
+    </div>
+
+    <!-- Main Dashboard Content -->
+    <div id="dashboard-content" class="hidden">
+      
+      <!-- 3-Column Layout -->
+      <div class="grid grid-cols-1 lg:grid-cols-3 gap-4">
+        
+        <!-- Today's Tasks (30%) -->
+        <div class="lg:col-span-1">
+          <div class="bg-white rounded-lg shadow p-4">
+            <h2 class="text-lg font-semibold mb-3 text-blue-600">Today's Tasks</h2>
+            <div id="today-tasks" class="space-y-2">
+              <div class="text-center text-gray-500 text-sm">Loading...</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Goals & Targets (30%) -->
+        <div class="lg:col-span-1 space-y-4">
+          
+          <!-- Targets Section -->
+          <div class="bg-white rounded-lg shadow p-4">
+            <h2 class="text-lg font-semibold mb-3 text-indigo-600">Goals & Targets</h2>
+            <div id="targets" class="space-y-3">
+              <div class="text-center text-gray-500 text-sm">Loading...</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- P1 Expenses (30%) -->
+        <div class="lg:col-span-1">
+          <div class="bg-white rounded-lg shadow p-4">
+            <h2 class="text-lg font-semibold mb-3 text-red-600">P1 Expenses</h2>
+            <div class="overflow-x-auto">
+              <table class="w-full text-sm">
+                <thead class="bg-gray-100">
+                  <tr>
+                    <th class="p-2 text-left">Item</th>
+                    <th class="p-2 text-right">Cost</th>
+                  </tr>
+                </thead>
+                <tbody id="p1-finance" class="divide-y">
+                  <tr>
+                    <td colspan="2" class="p-4 text-center text-gray-500">Loading...</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+
+        <!-- Other Content (40%) -->
+        <div class="lg:col-span-1 space-y-4">
+
+          <!-- Collapsible Finance Summary -->
+          <div class="bg-white rounded-lg shadow">
+            <div onclick="toggleSection('finance-summary')" class="p-4 cursor-pointer hover:bg-gray-50 flex justify-between items-center">
+              <h2 class="text-lg font-semibold text-purple-600">Finance Summary</h2>
+              <span id="finance-summary-toggle" class="text-gray-400">▼</span>
+            </div>
+            <div id="finance-summary-content" class="collapsible-content">
+              <div class="px-4 pb-4">
+                <div id="finance-summary" class="space-y-2">
+                  <div class="text-center text-gray-500 text-sm">Loading...</div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Collapsible Week Tasks -->
+          <div class="bg-white rounded-lg shadow">
+            <div onclick="toggleSection('week-tasks')" class="p-4 cursor-pointer hover:bg-gray-50 flex justify-between items-center">
+              <h2 class="text-lg font-semibold text-green-600">This Week</h2>
+              <span id="week-tasks-toggle" class="text-gray-400">▼</span>
+            </div>
+            <div id="week-tasks-content" class="collapsible-content">
+              <div class="px-4 pb-4">
+                <div id="week-tasks" class="space-y-2">
+                  <div class="text-center text-gray-500 text-sm">Loading...</div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Collapsible P2 Finance -->
+          <div class="bg-white rounded-lg shadow">
+            <div onclick="toggleSection('p2-finance')" class="p-4 cursor-pointer hover:bg-gray-50 flex justify-between items-center">
+              <h2 class="text-lg font-semibold text-orange-600">P2 Expenses</h2>
+              <span id="p2-finance-toggle" class="text-gray-400">▼</span>
+            </div>
+            <div id="p2-finance-content" class="collapsible-content">
+              <div class="px-4 pb-4">
+                <div class="overflow-x-auto">
+                  <table class="w-full text-sm">
+                    <thead class="bg-gray-100">
+                      <tr>
+                        <th class="p-2 text-left">Item</th>
+                        <th class="p-2 text-right">Cost</th>
+                      </tr>
+                    </thead>
+                    <tbody id="p2-finance" class="divide-y">
+                      <tr>
+                        <td colspan="2" class="p-4 text-center text-gray-500">Loading...</td>
+                      </tr>
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Collapsible P3 Finance -->
+          <div class="bg-white rounded-lg shadow">
+            <div onclick="toggleSection('p3-finance')" class="p-4 cursor-pointer hover:bg-gray-50 flex justify-between items-center">
+              <h2 class="text-lg font-semibold text-yellow-600">P3 Expenses</h2>
+              <span id="p3-finance-toggle" class="text-gray-400">▼</span>
+            </div>
+            <div id="p3-finance-content" class="collapsible-content">
+              <div class="px-4 pb-4">
+                <div class="overflow-x-auto">
+                  <table class="w-full text-sm">
+                    <thead class="bg-gray-100">
+                      <tr>
+                        <th class="p-2 text-left">Item</th>
+                        <th class="p-2 text-right">Cost</th>
+                      </tr>
+                    </thead>
+                    <tbody id="p3-finance" class="divide-y">
+                      <tr>
+                        <td colspan="2" class="p-4 text-center text-gray-500">Loading...</td>
+                      </tr>
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            </div>
+          </div>
+
+        </div>
+      </div>
+
+    </div>
+
+    <!-- Controls -->
+    <div class="mt-6 text-center">
+      <button onclick="loadAllData()" class="bg-green-500 text-white px-4 py-2 rounded hover:bg-green-600">
+        Refresh Data
+      </button>
+      <button onclick="logout()" class="bg-red-500 text-white px-4 py-2 rounded hover:bg-red-600 ml-2">
+        Logout
+      </button>
+    </div>
+
+  </div>
+
+<script>
+const API_URL = 'https://script.google.com/macros/s/AKfycbx0FtgV1YPobmE7xQQKMuRPUI1p2C_6F-t9DtN0LvZOJqZJoS9muFhM8SN1JZPIa-xePg/exec';
+
+// Session Management
+function isAuthenticated() {
+  return sessionStorage.getItem('dashboard_auth') === 'true';
+}
+
+function setAuthenticated(password) {
+  sessionStorage.setItem('dashboard_auth', 'true');
+  sessionStorage.setItem('dashboard_password', password); // Store for session
+}
+
+function getStoredPassword() {
+  return sessionStorage.getItem('dashboard_password');
+}
+
+function clearAuth() {
+  sessionStorage.removeItem('dashboard_auth');
+  sessionStorage.removeItem('dashboard_password');
+}
+
+// UI Functions
+function setStatus(msg, isError = false) {
+  const el = document.getElementById('status');
+  el.innerHTML = msg;
+  el.classList.remove('hidden', 'text-red-600', 'text-green-600');
+  if (isError) {
+    el.classList.add('text-red-600');
+  } else {
+    el.classList.add('text-green-600');
+  }
+}
+
+function clearStatus() {
+  document.getElementById('status').classList.add('hidden');
+}
+
+// Time and Progress Functions
+function updateTimeAndProgress() {
+  const now = new Date();
+  
+  // Update time (AM/PM format)
+  const hours = now.getHours();
+  const minutes = now.getMinutes().toString().padStart(2, '0');
+  const ampm = hours >= 12 ? 'PM' : 'AM';
+  const displayHours = hours % 12 || 12;
+  
+  document.getElementById('current-time').textContent = 
+    `${displayHours}:${minutes} ${ampm}`;
+  
+  // Update date
+  const days = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
+  const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+  
+  const dayName = days[now.getDay()];
+  const month = months[now.getMonth()];
+  const date = now.getDate();
+  
+  document.getElementById('current-date').textContent = `${dayName}, ${month} ${date}`;
+  
+  // Calculate day progress
+  const startOfDay = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 0, 0, 0);
+  const endOfDay = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 24, 0, 0);
+  
+  const totalDayMs = endOfDay - startOfDay;
+  const elapsedMs = now - startOfDay;
+  const percentage = Math.min(100, Math.max(0, (elapsedMs / totalDayMs) * 100));
+  
+  const hoursSpent = elapsedMs / (1000 * 60 * 60);
+  
+  // Update progress display
+  document.getElementById('day-percentage').textContent = `${Math.round(percentage)}%`;
+  document.getElementById('day-progress-bar').style.width = `${percentage}%`;
+  document.getElementById('hours-spent').textContent = `${hoursSpent.toFixed(1)} hours spent`;
+}
+
+// Collapsible Sections
+function toggleSection(sectionId) {
+  const content = document.getElementById(sectionId + '-content');
+  const toggle = document.getElementById(sectionId + '-toggle');
+  
+  if (content.classList.contains('expanded')) {
+    content.classList.remove('expanded');
+    toggle.textContent = '▼';
+  } else {
+    content.classList.add('expanded');
+    toggle.textContent = '▲';
+  }
+}
+
+// Authentication
+async function authenticate() {
+  const password = document.getElementById('password').value;
+  
+  if (!password) {
+    setStatus('Please enter a password', true);
+    return;
+  }
+  
+  try {
+    setStatus('Authenticating...');
+    
+    // Use GET request (Google Scripts work better with GET)
+    const url = `${API_URL}?action=dashboard&password=${encodeURIComponent(password)}`;
+    
+    const res = await fetch(url, {
+      method: 'GET',
+      mode: 'cors',
+      headers: {
+        'Accept': 'application/json'
+      }
+    });
+    
+    const responseText = await res.text();
+    const data = JSON.parse(responseText);
+    
+    if (data.error) {
+      throw new Error(data.error);
+    }
+    
+    setAuthenticated(password);
+    showDashboard();
+    renderDashboard(data);
+    setStatus('Authentication successful', false);
+    setTimeout(clearStatus, 2000);
+    
+  } catch (err) {
+    console.error('Auth error:', err);
+    setStatus('Access denied. Wrong password.', true);
+  }
+}
+
+function logout() {
+  clearAuth();
+  hideDashboard();
+  setStatus('Logged out successfully', false);
+  setTimeout(clearStatus, 2000);
+}
+
+function showDashboard() {
+  document.getElementById('auth-section').classList.add('hidden');
+  document.getElementById('dashboard-content').classList.remove('hidden');
+}
+
+function hideDashboard() {
+  document.getElementById('auth-section').classList.remove('hidden');
+  document.getElementById('dashboard-content').classList.add('hidden');
+  document.getElementById('password').value = '';
+}
+
+// Data Loading
+async function loadAllData() {
+  if (!isAuthenticated()) {
+    setStatus('Please authenticate first', true);
+    return;
+  }
+  
+  const storedPassword = getStoredPassword();
+  if (!storedPassword) {
+    setStatus('Session expired, please login again', true);
+    logout();
+    return;
+  }
+  
+  try {
+    setStatus('Loading data...');
+    
+    // Use GET request (Google Scripts work better with GET)
+    const url = `${API_URL}?action=dashboard&password=${encodeURIComponent(storedPassword)}`;
+    
+    const res = await fetch(url, {
+      method: 'GET',
+      mode: 'cors',
+      headers: {
+        'Accept': 'application/json'
+      }
+    });
+    
+    const responseText = await res.text();
+    const data = JSON.parse(responseText);
+    
+    if (data.error) {
+      throw new Error(data.error);
+    }
+    
+    renderDashboard(data);
+    setStatus('Data refreshed successfully', false);
+    setTimeout(clearStatus, 2000);
+    
+  } catch (err) {
+    console.error('Data error:', err);
+    setStatus('Failed to load data', true);
+  }
+}
+
+// Rendering Functions
+function renderDashboard(data) {
+  // Render Today's Tasks (P1 only)
+  renderTodayTasks(data.tasks.today);
+  
+  // Render Week's Tasks (P1 only)
+  renderWeekTasks(data.tasks.week);
+  
+  // Render Targets
+  renderTargets(data.targets);
+  
+  // Render Finance Summary
+  renderFinanceSummary(data.finances);
+  
+  // Render Finance Details
+  renderFinanceDetails(data.finances);
+}
+
+function renderTodayTasks(tasks) {
+  const container = document.getElementById('today-tasks');
+  
+  if (!tasks || tasks.length === 0) {
+    container.innerHTML = '<div class="text-center text-gray-500 text-sm">No P1 tasks for today</div>';
+    return;
+  }
+  
+  container.innerHTML = tasks.map(task => `
+    <div class="border-l-4 border-blue-500 pl-3 py-1">
+      <div class="font-medium text-sm">${task.task}</div>
+      <div class="text-xs text-gray-500">${task.status}</div>
+    </div>
+  `).join('');
+}
+
+function renderWeekTasks(tasks) {
+  const container = document.getElementById('week-tasks');
+  
+  if (!tasks || tasks.length === 0) {
+    container.innerHTML = '<div class="text-center text-gray-500 text-sm">No P1 tasks this week</div>';
+    return;
+  }
+  
+  container.innerHTML = tasks.map(task => `
+    <div class="border-l-4 border-green-500 pl-3 py-1">
+      <div class="font-medium text-sm">${task.task}</div>
+      <div class="text-xs text-gray-500">${formatDate(task.date)} • ${task.status}</div>
+    </div>
+  `).join('');
+}
+
+function renderTargets(targets) {
+  const container = document.getElementById('targets');
+  
+  if (!targets || targets.length === 0) {
+    container.innerHTML = '<div class="text-center text-gray-500 text-sm">No targets set</div>';
+    return;
+  }
+  
+  container.innerHTML = targets.map(target => `
+    <div class="border-l-4 border-indigo-500 pl-3 py-2">
+      <div class="flex justify-between items-start">
+        <div class="flex-1">
+          <div class="font-medium text-sm">${target.goal}</div>
+          <div class="text-xs text-gray-500">By ${formatDate(target.completionDate)} • ${target.owner}</div>
+        </div>
+        <div class="ml-3 text-right">
+          <div class="text-lg font-bold ${getProgressColor(target.progress)}">${target.progress}%</div>
+          <div class="w-16 bg-gray-200 rounded-full h-2 mt-1">
+            <div class="bg-indigo-600 h-2 rounded-full transition-all duration-500" style="width: ${target.progress}%"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  `).join('');
+}
+
+function getProgressColor(progress) {
+  if (progress >= 75) return 'text-green-600';
+  if (progress >= 50) return 'text-yellow-600';
+  if (progress >= 25) return 'text-orange-600';
+  return 'text-red-600';
+}
+
+function renderFinanceSummary(finances) {
+  const container = document.getElementById('finance-summary');
+  
+  const summary = `
+    <div class="space-y-3">
+      <div class="flex justify-between items-center p-2 bg-red-50 rounded">
+        <span class="text-sm font-medium">P1 Total:</span>
+        <span class="text-sm font-bold text-red-600">₹${finances.p1?.total?.toLocaleString() || 0}</span>
+      </div>
+      <div class="flex justify-between items-center p-2 bg-orange-50 rounded">
+        <span class="text-sm font-medium">P2 Total:</span>
+        <span class="text-sm font-bold text-orange-600">₹${finances.p2?.total?.toLocaleString() || 0}</span>
+      </div>
+      <div class="flex justify-between items-center p-2 bg-yellow-50 rounded">
+        <span class="text-sm font-medium">P3 Total:</span>
+        <span class="text-sm font-bold text-yellow-600">₹${finances.p3?.total?.toLocaleString() || 0}</span>
+      </div>
+      <div class="flex justify-between items-center p-2 bg-gray-100 rounded font-bold">
+        <span class="text-sm">Grand Total:</span>
+        <span class="text-sm">₹${((finances.p1?.total || 0) + (finances.p2?.total || 0) + (finances.p3?.total || 0)).toLocaleString()}</span>
+      </div>
+    </div>
+  `;
+  
+  container.innerHTML = summary;
+}
+
+function renderFinanceDetails(finances) {
+  // Render P1 Finance
+  renderFinanceTable('p1-finance', finances.p1);
+  
+  // Render P2 Finance  
+  renderFinanceTable('p2-finance', finances.p2);
+  
+  // Render P3 Finance
+  renderFinanceTable('p3-finance', finances.p3);
+}
+
+function renderFinanceTable(elementId, financeData) {
+  const tbody = document.getElementById(elementId);
+  
+  if (!financeData || !financeData.items || financeData.items.length === 0) {
+    tbody.innerHTML = '<tr><td colspan="2" class="p-4 text-center text-gray-500 text-sm">No items</td></tr>';
+    return;
+  }
+  
+  tbody.innerHTML = financeData.items.slice(0, 5).map(item => `
+    <tr>
+      <td class="p-2 text-sm">${item.item}</td>
+      <td class="p-2 text-right text-sm font-medium">₹${item.cost.toLocaleString()}</td>
+    </tr>
+  `).join('');
+  
+  if (financeData.items.length > 5) {
+    tbody.innerHTML += `<tr><td colspan="2" class="p-2 text-center text-xs text-gray-500">+${financeData.items.length - 5} more items</td></tr>`;
+  }
+}
+
+function formatDate(dateStr) {
+  if (!dateStr) return '';
+  
+  try {
+    const date = new Date(dateStr);
+    if (isNaN(date.getTime())) return dateStr;
+    
+    const options = { month: 'short', day: 'numeric' };
+    return date.toLocaleDateString('en-US', options);
+  } catch (e) {
+    return dateStr;
+  }
+}
+
+// Initialize
+document.addEventListener('DOMContentLoaded', function() {
+  // Start time updates
+  updateTimeAndProgress();
+  setInterval(updateTimeAndProgress, 60000); // Update every minute
+  
+  if (isAuthenticated()) {
+    showDashboard();
+    loadAllData();
+  } else {
+    hideDashboard();
+    setStatus('Enter password to access dashboard');
+  }
+});
+
+</script>
+
+</body>
+</html>
