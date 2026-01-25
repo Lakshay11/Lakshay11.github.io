@@ -210,7 +210,7 @@
   </div>
 
 <script>
-const API_URL = 'https://script.google.com/macros/s/AKfycbwCNTnUNjp5X-AE1DThKDD_Fm1gwnrCr5F41Sq5I5lBsFL1Y5EnBtyqb9UojfYA6_d4pA/exec';
+const API_URL = 'https://script.google.com/macros/s/AKfycbx0FtgV1YPobmE7xQQKMuRPUI1p2C_6F-t9DtN0LvZOJqZJoS9muFhM8SN1JZPIa-xePg/exec';
 
 // Session Management
 function isAuthenticated() {
@@ -312,6 +312,39 @@ async function authenticate() {
   try {
     setStatus('Authenticating...');
     
+    // Use GET request (Google Scripts work better with GET)
+    const url = `${API_URL}?action=dashboard&password=${encodeURIComponent(password)}`;
+    
+    const res = await fetch(url, {
+      method: 'GET',
+      mode: 'cors',
+      headers: {
+        'Accept': 'application/json'
+      }
+    });
+    
+    const responseText = await res.text();
+    const data = JSON.parse(responseText);
+    
+    if (data.error) {
+      throw new Error(data.error);
+    }
+    
+    setAuthenticated(password);
+    showDashboard();
+    renderDashboard(data);
+    setStatus('Authentication successful', false);
+    setTimeout(clearStatus, 2000);
+    
+  } catch (err) {
+    console.error('Auth error:', err);
+    setStatus('Access denied. Wrong password.', true);
+  }
+}
+  
+  try {
+    setStatus('Authenticating...');
+    
     // Use POST to avoid Google Script redirects
     const formData = new FormData();
     formData.append('action', 'dashboard');
@@ -367,6 +400,44 @@ async function loadAllData() {
     setStatus('Please authenticate first', true);
     return;
   }
+  
+  const storedPassword = getStoredPassword();
+  if (!storedPassword) {
+    setStatus('Session expired, please login again', true);
+    logout();
+    return;
+  }
+  
+  try {
+    setStatus('Loading data...');
+    
+    // Use GET request (Google Scripts work better with GET)
+    const url = `${API_URL}?action=dashboard&password=${encodeURIComponent(storedPassword)}`;
+    
+    const res = await fetch(url, {
+      method: 'GET',
+      mode: 'cors',
+      headers: {
+        'Accept': 'application/json'
+      }
+    });
+    
+    const responseText = await res.text();
+    const data = JSON.parse(responseText);
+    
+    if (data.error) {
+      throw new Error(data.error);
+    }
+    
+    renderDashboard(data);
+    setStatus('Data refreshed successfully', false);
+    setTimeout(clearStatus, 2000);
+    
+  } catch (err) {
+    console.error('Data error:', err);
+    setStatus('Failed to load data', true);
+  }
+}
   
   const storedPassword = getStoredPassword();
   if (!storedPassword) {
