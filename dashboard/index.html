@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>P1 Finance Dashboard</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-gray-100 min-h-screen p-4">
+
+  <div class="max-w-5xl mx-auto">
+    <h1 class="text-2xl font-bold mb-4">P1 Finance Dashboard</h1>
+
+    <div class="bg-white rounded-lg shadow p-4">
+      <table class="w-full border">
+        <thead class="bg-gray-200">
+          <tr>
+            <th class="p-2 border text-left">Item</th>
+            <th class="p-2 border text-left">Category</th>
+            <th class="p-2 border text-right">Cost (₹)</th>
+          </tr>
+        </thead>
+        <tbody id="finance-body"></tbody>
+        <tfoot class="bg-gray-100 font-semibold">
+          <tr>
+            <td colspan="2" class="p-2 border text-right">Total</td>
+            <td id="finance-total" class="p-2 border text-right"></td>
+          </tr>
+        </tfoot>
+      </table>
+    </div>
+  </div>
+
+<script>
+const API_URL = 'PASTE_YOUR_APPS_SCRIPT_URL';
+
+async function loadFinance() {
+  try {
+    const res = await fetch(`${API_URL}?action=finance_p1`, {
+      credentials: 'include'
+    });
+
+    const data = await res.json();
+
+    if (data.error) {
+      alert('Access denied');
+      return;
+    }
+
+    const tbody = document.getElementById('finance-body');
+    tbody.innerHTML = '';
+
+    data.items.forEach(row => {
+      const tr = document.createElement('tr');
+      tr.innerHTML = `
+        <td class="p-2 border">${row.item}</td>
+        <td class="p-2 border">${row.category}</td>
+        <td class="p-2 border text-right">₹${row.cost.toLocaleString()}</td>
+      `;
+      tbody.appendChild(tr);
+    });
+
+    document.getElementById('finance-total')
+      .textContent = `₹${data.total.toLocaleString()}`;
+
+  } catch (err) {
+    alert('Please login with authorized Google account');
+  }
+}
+
+loadFinance();
+</script>
+
+</body>
+</html>
+
