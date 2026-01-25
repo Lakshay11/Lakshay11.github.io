@@ -341,40 +341,6 @@ async function authenticate() {
     setStatus('Access denied. Wrong password.', true);
   }
 }
-  
-  try {
-    setStatus('Authenticating...');
-    
-    // Use POST to avoid Google Script redirects
-    const formData = new FormData();
-    formData.append('action', 'dashboard');
-    formData.append('password', password);
-    
-    const res = await fetch(API_URL, {
-      method: 'POST',
-      body: formData,
-      mode: 'cors'
-    });
-    
-    const responseText = await res.text();
-    console.log('Auth response:', responseText);
-    const data = JSON.parse(responseText);
-    
-    if (data.error) {
-      throw new Error(data.error);
-    }
-    
-    setAuthenticated(password); // Store password for session
-    showDashboard();
-    renderDashboard(data);
-    setStatus('Authentication successful', false);
-    setTimeout(clearStatus, 2000);
-    
-  } catch (err) {
-    console.error('Auth error:', err);
-    setStatus('Access denied. Wrong password.', true);
-  }
-}
 
 function logout() {
   clearAuth();
@@ -423,45 +389,6 @@ async function loadAllData() {
     });
     
     const responseText = await res.text();
-    const data = JSON.parse(responseText);
-    
-    if (data.error) {
-      throw new Error(data.error);
-    }
-    
-    renderDashboard(data);
-    setStatus('Data refreshed successfully', false);
-    setTimeout(clearStatus, 2000);
-    
-  } catch (err) {
-    console.error('Data error:', err);
-    setStatus('Failed to load data', true);
-  }
-}
-  
-  const storedPassword = getStoredPassword();
-  if (!storedPassword) {
-    setStatus('Session expired, please login again', true);
-    logout();
-    return;
-  }
-  
-  try {
-    setStatus('Loading data...');
-    
-    // Use POST to avoid Google Script redirects
-    const formData = new FormData();
-    formData.append('action', 'dashboard');
-    formData.append('password', storedPassword);
-    
-    const res = await fetch(API_URL, {
-      method: 'POST',
-      body: formData,
-      mode: 'cors'
-    });
-    
-    const responseText = await res.text();
-    console.log('Data response:', responseText);
     const data = JSON.parse(responseText);
     
     if (data.error) {
